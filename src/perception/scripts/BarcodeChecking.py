@@ -4,7 +4,7 @@ import rospy
 import cv2
 import numpy as np
 from sensor_msgs.msg import Image
-from std_msgs.msg import String, Int64
+from std_msgs.msg import String, Int64, Float64
 from cv_bridge import CvBridge, CvBridgeError
 
 import time
@@ -18,7 +18,7 @@ class Barcode_Detection:
         CamImg_topic = '/cv/box_cropped'
         rospy.Subscriber(CamImg_topic, Image, self.Callback, queue_size=1)
         self.pub = rospy.Publisher('crop', Image, queue_size=5)
-        self.pub_barcode_area = rospy.Publisher('/barcode_area', Int64, queue_size=5)
+        self.pub_barcode_area = rospy.Publisher('/barcode_area', Float64, queue_size=5)
 
     def Callback(self,img_msg):
         global N
@@ -29,7 +29,7 @@ class Barcode_Detection:
             #try:
             image = bridge.imgmsg_to_cv2(img_msg, "passthrough")
 
-            lower = np.array([0, 46, 0])
+            lower = np.array([0, 35, 0])
             upper = np.array([179, 255, 255])
 
             # Create HSV Image and threshold into a range.
@@ -56,11 +56,11 @@ class Barcode_Detection:
             image_area = h*w
             #print(image_area)
             #print(total_area)
-            barcode_area = Int64()
+            barcode_area = Float64()
 
             if(float(total_area/image_area) >= 0.1):
                 print('barcode is present')
-                barcode_area.data = int(total_area)
+                barcode_area.data = total_area
             else:
                 barcode_area.data = 0
                 print('barcode not present')
