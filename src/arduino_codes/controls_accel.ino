@@ -1,5 +1,6 @@
 #include <AccelStepper.h>
 
+
 // Define the pins for the stepper motor
 #define STEP_PIN 25
 #define DIR_PIN 29
@@ -21,8 +22,7 @@ void setup() {
 
 void loop() {
   // Move forward 500 steps
-  moveStepper(2000
-  );
+  moveStepper(2000);
 
   delay(1000); // Delay for 1 second
 
