@@ -4,7 +4,7 @@
 
 ros::NodeHandle nh;
 
-const int stepPin = 2;   
+const int stepPin = 2;   //please change this
 const int dirPin = 3;
 
 const int stepsPerRevolution = 200;  // Number of steps per revolution (step size)
