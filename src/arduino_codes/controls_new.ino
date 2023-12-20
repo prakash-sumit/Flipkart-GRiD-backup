@@ -110,8 +110,8 @@ int64_t combined_msg = msg.data;
 //   nh.loginfo("task 1 hi hai bhai");
 //  }
 
-suction_msg.data = task;
-suction.publish(&suction_msg);
+// suction_msg.data = task;
+// suction.publish(&suction_msg);
 
  if (steps_x > 0) {
     digitalWrite(dirPinM1, HIGH); // Set direction forward
