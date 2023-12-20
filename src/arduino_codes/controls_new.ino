@@ -11,14 +11,14 @@
 
 ros::NodeHandle nh;
 
-#define stepPinM1 47
-#define dirPinM1 53
-#define stepPinM2 25
-#define dirPinM2 29
-#define stepPinM3 4
-#define dirPinM3 3
+#define stepPinM1 37
+#define dirPinM1 43
+#define stepPinM2 23
+#define dirPinM2 31
+#define stepPinM3 5
+#define dirPinM3 7
 
-#define stepPinM4 41
+#define stepPinM4 48
 #define dirPinM4 39
 
 // Create an AccelStepper object
@@ -48,7 +48,7 @@ int counter_servo = 100;
 
 // int tray_r = 980/2;
 int tray_r = 0;
-int tray_theta= 200;
+int tray_theta= 155;
 // int tray_z = 1537/2 ;
 int tray_z = 0 ;
 
@@ -62,6 +62,7 @@ ros::Publisher suction ("/task_for_suction", &suction_msg); //publish on complet
 // ros::Publisher randomness ("/okbro", &random_debug);
 // ros::Publisher debugger ("/debugging", &random_steps);
 void angles_callback(const std_msgs::Int64& msg) {
+  nh.loginfo("task aaya");
 
 int64_t combined_msg = msg.data;
 
@@ -101,10 +102,16 @@ int64_t combined_msg = msg.data;
  task = combined_msg;
 
  if(task == 4){
-    steps_x = tray_r - steps_x
-    steps_y = tray_theta - steps_y
-    steps_z = -(steps_z)
+    steps_x = tray_r - steps_x;
+    steps_y = tray_theta - steps_y;
+    steps_z = -(steps_z);
  }
+//  if(task == 1){
+//   nh.loginfo("task 1 hi hai bhai");
+//  }
+
+suction_msg.data = task;
+suction.publish(&suction_msg);
 
  if (steps_x > 0) {
     digitalWrite(dirPinM1, HIGH); // Set direction forward
@@ -127,6 +134,7 @@ int64_t combined_msg = msg.data;
   motor1.move(steps_x);
   motor2.move(steps_y);
   motor3.move(steps_z);
+  nh.loginfo("callback ke end me");
     
   // Implement your motor control logic for steps_x here
 }
@@ -136,20 +144,20 @@ ros::Subscriber<std_msgs::Int64> angles("/motor/target_angles", &angles_callback
 void setup() {
     // Initialize your stepper motors and servo here
     // Set the maximum speed and acceleration
-  motor1.setMaxSpeed(5000.0);
-  motor1.setAcceleration(2500.0);
+  motor1.setMaxSpeed(2800.0);
+  motor1.setAcceleration(2000.0);
 
   // Set the initial position to 0
   motor1.setCurrentPosition(0);
 
-  motor2.setMaxSpeed(5000.0);
-  motor2.setAcceleration(2500.0);
+  motor2.setMaxSpeed(65.0);
+  motor2.setAcceleration(30.0);
 
   // Set the initial position to 0
   motor2.setCurrentPosition(0);
 
-  motor3.setMaxSpeed(5000.0);
-  motor3.setAcceleration(2500.0);
+  motor3.setMaxSpeed(2000.0);
+  motor3.setAcceleration(1500.0);
 
   // Set the initial position to 0
   motor3.setCurrentPosition(0);
@@ -176,8 +184,8 @@ void setup() {
 //    suckservo4.write(0);
     
 //sucktion 2 mechanim
-    myservo1.attach(7);
-    myservo1.write(135);                 //degree 30 is the downward position as per night of oct23 
+    myservo1.attach(11);
+    myservo1.write(0);                 //degree 110 is the downward position as per night of dec19th 
     nh.initNode();
     nh.subscribe(angles);
     nh.advertise(suction);
@@ -190,9 +198,10 @@ void setup() {
 void loop() {
     nh.spinOnce();
     // delay(100);
+    // nh.loginfo("void loop me gaya");
     
 if (task == 1){
-nh.loginfo("task 1");
+  nh.loginfo("task 1");
   
 if(counter_y==1){
     nh.loginfo("y chal raha");
@@ -220,7 +229,7 @@ if(counter_x==1) {
 
 if(counter_servo ==1 && counter_y ==0 && counter_x ==0) {
         //servo back to 0
-        for(int j=135 ; j >=45 ; j--) {
+        for(int j=0 ; j <=110 ; j++) {
         myservo1.write (j);
         delay(5);
         }
@@ -259,7 +268,7 @@ if(counter_z == 4 ){
     counter_x = 4;
     counter_y = 4;
     digitalWrite(dirPinM3, HIGH);
-    motor3.run(tray_z);
+    motor3.move(tray_z);
   }
 }
 
@@ -354,7 +363,7 @@ if (counter_x ==8) {
   counter_y =8;
   // servo back to 90 degree
       delay(100) ; 
-  for(int j=45 ; j <=135 ; j++) {
+  for(int j=110 ; j >=0 ; j--) {
   myservo1.write (j);
   delay(2);
   }

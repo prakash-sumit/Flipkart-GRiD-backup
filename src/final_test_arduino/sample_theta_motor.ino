@@ -158,13 +158,13 @@ void move_clockwise(int stepPin , int dirPin) {
 void loop() {
 
 for (int i=0; i<10; i++) {
-  while (current_steps_y <= 400) {
+  while (current_steps_y <= 200) {
   move_clockwise(stepPinM2,dirPinM2);
   current_steps_y++ ;
     delay(20);
   }
   delay(500);
-  while (current_steps_y >= -400) {
+  while (current_steps_y >= -200) {
   move_anticlockwise(stepPinM2,dirPinM2);
   current_steps_y-- ;
     delay(20);

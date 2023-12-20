@@ -11,7 +11,7 @@ class MotorControlNode:
         self.task = None
         rospy.Subscriber('/info_from_arduino', Int64, self.info_callback, queue_size=5)
         self.pub_to_dm = rospy.Publisher('/dm/info_from_controls', Int64, queue_size=5)
-        self.curr_poss = 49.5  # Your current position in cm
+        self.curr_poss = 42.1  # distance from suction centre to shaft centre
         self.motor_angles_pub = rospy.Publisher('/motor/target_angles', Int64, queue_size=1)
         self.motor_target_sub = rospy.Subscriber('/motor/target_coordinates', Point, self.motor_target_callback, queue_size=5)
         rospy.Subscriber('/task_for_suction', Int64, self.suction_callback, queue_size=1)
@@ -22,12 +22,7 @@ class MotorControlNode:
         self.steps_z = None
         
         self.confirmation = 0
-        
-        self.r_tray = 980/4  # 200 steps
-        self.theta_tray = 200
-        self.z_tray = 1537/4
-        
-    
+            
     def suction_callback(self, data):
         self.suction_msg = data.data
         to_pub = Int64()
@@ -142,8 +137,7 @@ class MotorControlNode:
                 self.motor_angles_pub.publish(angles_to_pub)
             else:
                 print('No position from cv')
-                
-                
+                                
     def info_callback(self, data):
         self.confirmation = data.data
         
@@ -168,7 +162,7 @@ class MotorControlNode:
         # return theta_deg, r
         a = self.curr_poss + x_wrt_centre
         if y_wrt_centre >= 0 :
-            b = y_wrt_centre + 3.5  
+            b = y_wrt_centre + 3.5      # distance of suction centre to horizontal member centre
             theta_angle = math.acos(3.5 / math.sqrt (a*a + b*b)) - math.acos(b / math.sqrt (a*a + b*b))
             theta_deg = (180.0 / 3.1415926) * theta_angle
             r = (a + 3.5 * math.sin(theta_angle))/math.cos(theta_angle) - self.curr_poss          
@@ -176,44 +170,45 @@ class MotorControlNode:
     
         if y_wrt_centre <0 :
             y_wrt_centre = -(y_wrt_centre)
-            b = y_wrt_centre - 3.5
+            b = y_wrt_centre - 3.5      # distance of suction centre to horizontal member centre
             theta_angle = math.acos(b / math.sqrt (a*a + b*b)) - math.acos(3.5 / math.sqrt (a*a + b*b)) 
             theta_deg = (180.0 / 3.1415926) * theta_angle
             r = (a - 3.5 * math.sin(theta_angle))/math.cos(theta_angle) - self.curr_poss
             return theta_deg, r
         
     def motor_target_callback(self, data):
-        x_wrt_centre = data.x  # camera and suction centre allignment is 5cm  # 
-        y_wrt_centre = data.y + 8.9  #camera and suction allignment is 8cm     # +10 
-        z = data.z   # for ensuring suction hits the surface nicely      # +8.5
+        x_wrt_centre = data.x + 7.35    # distance of left sensor to suction centre in x
+        y_wrt_centre = data.y + 6.5     # distance of left sensor to suction centre in y
+        z = data.z - 23.5 + 0.5  # distance of suction to zed camera and 0.5 add to ensure suction gets stuck to box
         
         theta, r = self.calculate_polar_coordinates(x_wrt_centre,y_wrt_centre)
         
-        # self.steps_x = math.floor(r / 0.0192)  # for 800 steps
-        self.steps_x = math.floor(r / 0.0384) + 125 # for 400 steps # 117 is extra for random reason debug 
-        # self.steps_x = math.floor(r / 0.0768) + 130  # for 200 steps # 117 is extra for random reason debug 
+        # self.steps_x = math.floor(r / 0.0384) # for 400 steps 
+        self.steps_x = math.floor(r / 0.0192) # for 800 steps 
+        # self.steps_x = math.floor(r / 0.0768)   # for 200 steps 
         # self.steps_x = math.floor(r / 0.0024) # for 6400 steps
         
         self.steps_y = math.floor((theta) * 2.222)   # for 800 steps
         
         # self.steps_z = math.floor((z - 20.32) / 0.018) # for 800 steps
         # self.steps_z = math.floor((z - 20 + 1) / 0.036) # for 400 steps          # -33 
-        if self.steps_x < 0 and self.steps_y < 0 :
-            self.steps_x += 25
-            z = z+1   
-        elif self.steps_x >0 and self.steps_y<0:
-            z -= 1.5
-            self.steps_x += 120
-        elif self.steps_x <0 and self.steps_y>0:
-            self.steps_x += 142
-            self.steps_y += 4
-        elif self.steps_x >0 and self.steps_y>0:
-            self.steps_x += 265
-            self.steps_y += 4
-            z-= 2.5
-        self.steps_z = math.floor((z - 20 + 0.5) / 0.036) # for 400 steps          # -33 
-        # self.steps_z = math.floor((z - 20 + 1.1) / 0.072) # for 200 steps        # -33 
-        # self.steps_z = math.floor((z - 20.32) / 0.00225)  # for 6400 steps
+        # if self.steps_x < 0 and self.steps_y < 0 :
+        #     self.steps_x += 25
+        #     z = z+1   
+        # elif self.steps_x >0 and self.steps_y<0:
+        #     z -= 1.5
+        #     self.steps_x += 120
+        # elif self.steps_x <0 and self.steps_y>0:
+        #     self.steps_x += 142
+        #     self.steps_y += 4
+        # elif self.steps_x >0 and self.steps_y>0:
+        #     self.steps_x += 265
+        #     self.steps_y += 4
+        #     z-= 2.5
+        # self.steps_z = math.floor((z - 20.32) / 0.036) # for 400 steps          # -33
+        self.steps_z = math.floor((z) / 0.018) # for 800 steps          # -33 
+        # # self.steps_z = math.floor((z - 20 + 1.1) / 0.072) # for 200 steps        # -33 
+        # # self.steps_z = math.floor((z - 20.32) / 0.00225)  # for 6400 steps
         
 
 if __name__ == '__main__':

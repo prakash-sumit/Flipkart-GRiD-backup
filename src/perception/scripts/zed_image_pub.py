@@ -21,7 +21,7 @@ class Zed:
         init_params = sl.InitParameters()
         init_params.camera_resolution = sl.RESOLUTION.AUTO # Use HD720 opr HD1200 video mode, depending on camera type.
         init_params.camera_fps = 30  # Set fps at 30
-        init_params.depth_mode = sl.DEPTH_MODE.ULTRA  # Use ULTRA depth mode
+        init_params.depth_mode = sl.DEPTH_MODE.NEURAL  # Use ULTRA depth mode
         init_params.coordinate_units = sl.UNIT.MILLIMETER  # Use meter units (for depth measurements)
 
         # Open the camera
@@ -47,8 +47,13 @@ class Zed:
                 timestamp = self.zed.get_timestamp(sl.TIME_REFERENCE.CURRENT)  # Get the timestamp at the time the image was captured
                 print("Image resolution: {0} x {1} || Image timestamp: {2}\n".format(image.get_width(), image.get_height(),
                     timestamp.get_milliseconds()))
-                img = np.array(image.get_data())
+                self.img = np.array(image.get_data())
                 self.zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
+                # cv2.imshow('image', self.img)
+                # cv2.setMouseCallback('image', self.click_event)
+                # cv2.waitKey(0)
+                
+                # cv2.destroyAllWindows()
                 #print(depth.get_data()[y][x])
                 # depth_image = depth.get_data()
                 # depth_x = depth_image[100,100]
@@ -56,8 +61,8 @@ class Zed:
                 dep = bridge.cv2_to_imgmsg(depth.get_data(), "passthrough")
                 
                 depth_publisher.publish(dep)
-                # print(type(img))
-                img = bridge.cv2_to_imgmsg(img, "passthrough")
+                # print(type(self.img))
+                img = bridge.cv2_to_imgmsg(self.img, "passthrough")
                 
                 image_publisher.publish(img)
         # Close the camera
@@ -70,11 +75,32 @@ class Zed:
         x = point3D[1][0]
         y = point3D[1][1]
         z = point3D[1][2]
+        print('x: ',x)
+        print('y: ',y)
+        print('z: ',z)
         result = Point()
-        result.x = - x/10  # negative sign for axes calibration for controls
-        result.y = - y/10  # negative sign for axes calibration for controls
+        # result.x = - (x+5.958512306213379)/10  # negative sign for axes calibration for controls
+        result.x = -x/10
+        # result.y = - (y-4.249844551086426)/10  # negative sign for axes calibration for controls
+        result.y = -y/10
         result.z = z/10
         self.pub_target_coordinates.publish(result)  # in cm
+
+    def click_event(self, event, x, y, flags, params):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            print(x, ' ', y)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(self.img, str(x) + ',' + str(y), (x, y), font, 1, (255, 0, 0), 2)
+            # cv2.imshow('image', self.img)
+
+        if event == cv2.EVENT_RBUTTONDOWN:
+            print(x, ' ', y)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            b = self.img[y, x, 0]
+            g = self.img[y, x, 1]
+            r = self.img[y, x, 2]
+            cv2.putText(self.img, str(b) + ',' + str(g) + ',' + str(r), (x, y), font, 1, (255, 255, 0), 2)
+            # cv2.imshow('image', self.img)
 
         
 

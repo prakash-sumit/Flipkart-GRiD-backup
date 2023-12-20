@@ -17,21 +17,32 @@ class Box_Detection:
     def __init__(self):
         self.model = torch.hub.load('/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5', 'custom', source = 'local', path = '/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5/runs/train/exp14/weights/best.pt', force_reload=True)
         self.model2 = torch.hub.load('/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5', 'custom', source = 'local', path = '/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5/runs/train/exp/weights/best.pt', force_reload=True)
-        #Arm_cam_topic = "/zed2i/zed_node/rgb/image_rect_color"
+        # Arm_cam_topic = "/zed2i/zed_node/left_raw/image_rect_color"
         Arm_cam_topic = "zed_camera/image"
         rospy.Subscriber('/task', Int64, self.task_Callback)
         rospy.Subscriber(Arm_cam_topic, Image, self.Callback)
-        #rospy.Subscriber("/zed2i/zed_node/depth/depth_registered", Image, self.depth_callback)
+        # rospy.Subscriber("/zed2i/zed_node/depth/depth_registered", Image, self.depth_callback)
         rospy.Subscriber("zed_camera/depth", Image, self.depth_callback)
         Tray_cam_topic = '/camera1/image_raw'
         rospy.Subscriber(Tray_cam_topic, Image, self.tray_Callback)
         self.pub_cropped_img = rospy.Publisher('/cv/box_cropped', Image, queue_size=5)
-        self.pub_target_coordinates = rospy.Publisher('/actual_coordinates', Point, queue_size=5)
+        self.pub_target_coordinates = rospy.Publisher('/motor/target_coordinates', Point, queue_size=5)
+        # self.pub_target_coordinates = rospy.Publisher('/actual_coordinates', Point, queue_size=5)
         self.task = None
         # self.task = 1
-        self.task = 3 # for testing
+        # self.task = 3 # for testing
         self.pub_display = rospy.Publisher('/display_picture', Image, queue_size=1)
         self.detect()
+    
+    def undistort(self, image):
+        camera_matrix = None
+        dist_coeffs = None
+        camera_matrix = np.array([[703.3630, 0,584.4595], [0, 704.3759, 308.9572], [0, 0, 1.000]])
+        dist_coeffs = np.array([[0.0064, -0.2324, 0., 0., 0.]])
+        width, height = np.shape(image)[1], np.shape(image)[0] 
+        newcameramatrix, _ = cv2.getOptimalNewCameraMatrix(camera_matrix, dist_coeffs, (width, height), 1, (width, height))
+        undistorted_image = cv2.undistort(image, camera_matrix, dist_coeffs, None, newcameramatrix)
+        return undistorted_image
 
     def task_Callback(self, task):
         self.task = task.data
@@ -50,7 +61,9 @@ class Box_Detection:
             bridge = CvBridge()
             #try:
             image = bridge.imgmsg_to_cv2(img_msg, "passthrough")
+            # image = self.undistort(image)
             h, w, _ = image.shape
+            print(image.shape)
 
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             # cv2.imshow('d',image)
@@ -59,6 +72,8 @@ class Box_Detection:
             results = self.model(img)
             coordinates = results.xyxyn[0][:,:-1]
             filtered_boxes = coordinates[coordinates[:, 4] > 0.6, :4] # filter boxes by score > 0.6
+            print(coordinates)
+            print(filtered_boxes)
 
             # Calculate midpoints of bounding boxes
             midpoints = []
@@ -73,6 +88,7 @@ class Box_Detection:
 
             for box in filtered_boxes:
                 x1, y1, x2, y2 = box.tolist()
+                print(y1)
                 cv2.rectangle(image2, (int(x1*w), int(y1*h)), (int(x2*w), int(y2*h)), color, thickness)
                 midpoint_x = (x1 + x2) / 2
                 midpoint_y = (y1 + y2) / 2
@@ -82,20 +98,24 @@ class Box_Detection:
 
             closest_point_depth = 1000000
             closest_point = []
-            print(self.depth_image[midpoints[0][1], midpoints[0][0]].item())
+            index = 0
+            i =0
             # try:
             for i in range(len(midpoints)):
-                if(self.depth_image[midpoints[i][1], midpoints[i][0]].item() < closest_point_depth):  # 1,0 coz conversion from x-y to pixel coordinate system
+                if(self.depth_image[midpoints[i][1], midpoints[i][0]] < closest_point_depth):  # 1,0 coz conversion from x-y to pixel coordinate system
                     closest_point = midpoints[i]
-                    closest_point_depth = self.depth_image[midpoints[i][1], midpoints[i][0]].item()
+                    closest_point_depth = self.depth_image[midpoints[i][1], midpoints[i][0]]
                     index = i
                     print(i)
+            print(self.depth_image[midpoints[i][1], midpoints[i][0]])
 
             print(closest_point)
             target_coordinate = Point()
-            target_coordinate.x = closest_point[0]
-            target_coordinate.y = closest_point[1]
-            target_coordinate.z = self.depth_image[closest_point[1], closest_point[0]]  # 1,0 coz conversion from x-y to pixel coordinate system
+            target_coordinate.z = self.depth_image[closest_point[1], closest_point[0]]/10   # 1,0 coz conversion from x-y to pixel coordinate system
+            target_coordinate.x = (616 - closest_point[0])*(0.00183*target_coordinate.z + 0.00436)    # conversion factor
+            target_coordinate.y = (365 - closest_point[1])*(0.00183*target_coordinate.z + 0.00436)    # conversion factor
+            # target_coordinate.x = closest_point[0]
+            # target_coordinate.y = closest_point[1]
 
             cv2.circle(image2, (closest_point[0], closest_point[1]), 20, (255,0,0), thickness=2, lineType=8, shift=0)
             # pub_target_coordinates.publish(target_coordinate)
@@ -114,6 +134,7 @@ class Box_Detection:
             cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB)
             image2 = bridge.cv2_to_imgmsg(image2, "passthrough")
             cropped_image = bridge.cv2_to_imgmsg(cropped_image, "passthrough")
+
 
             if(target_coordinate.z > 30): # in cm
                 self.pub_cropped_img.publish(cropped_image)
@@ -191,6 +212,7 @@ class Box_Detection:
 if __name__ == '__main__':
     try:
         rospy.init_node("Box_Detection_Node_New")
+        # print('hello')
         obj = Box_Detection()
         rospy.spin()
 

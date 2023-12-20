@@ -14,6 +14,7 @@ def depth_callback(data):
         # You can now process and print the depth data as per your requirements
         # For example, to print the depth value at the center pixel:
         center_pixel_depth = depth_image[depth_image.shape[0] // 2, depth_image.shape[1] // 2]
+        # center_pixel_depth = depth_image[200,200]
         print("Depth at center pixel:", center_pixel_depth)
 
     except Exception as e:

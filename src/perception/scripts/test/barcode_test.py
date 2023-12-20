@@ -14,9 +14,19 @@ N = 0
 class Barcode_Detection:
 
     def __init__(self):
-        CamImg_topic = "/zed2i/zed_node/rgb/image_rect_color"
+        CamImg_topic = "/zed_camera/image"
         rospy.Subscriber(CamImg_topic, Image, self.Callback)
         self.pub = rospy.Publisher('crop', Image, queue_size=2)
+    
+    def undistort(self, image):
+        camera_matrix = None
+        dist_coeffs = None
+        camera_matrix = np.array([[703.3630, 0,584.4595], [0, 704.3759, 308.9572], [0, 0, 1.000]])
+        dist_coeffs = np.array([[0.0064, -0.2324, 0., 0., 0.]])
+        width, height = np.shape(image)[1], np.shape(image)[0] 
+        newcameramatrix, _ = cv2.getOptimalNewCameraMatrix(camera_matrix, dist_coeffs, (width, height), 1, (width, height))
+        undistorted_image = cv2.undistort(image, camera_matrix, dist_coeffs, None, newcameramatrix)
+        return undistorted_image
 
     def Callback(self,img_msg):
         global N
@@ -25,10 +35,12 @@ class Barcode_Detection:
         bridge = CvBridge()
         if(N >= 0):
             try:
-                img = bridge.imgmsg_to_cv2(img_msg, "bgr8")
+                img = bridge.imgmsg_to_cv2(img_msg, "passthrough")
+                print(img.shape)
+                # img = self.undistort(img)
                 #img = img[130:230, 240:400]
                 #print(img.shape)
-                cv2.imwrite('/home/umic/zed_images_new/box{}.jpg'.format(N), img)
+                cv2.imwrite('/home/sedrica/images2/box{}.jpg'.format(N), img)
                 
                 print('image taken{}'.format(N))
                 time.sleep(5)
@@ -51,7 +63,7 @@ class Barcode_Detection:
                     data_to_pub.data = 'barcode not found'
                 '''
                 #self.pub.publish(data_to_pub)
-                img = bridge.cv2_to_imgmsg(img, "bgr8")
+                img = bridge.cv2_to_imgmsg(img, "passthrough")
                 self.pub.publish(img)
                 
                 #N += 1

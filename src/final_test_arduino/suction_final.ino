@@ -54,7 +54,7 @@ if(task==2){
     suckservo1.attach(10);
     suckservo1.write(180);
     suckservo3.attach(3);
-    suckservo3.write(180);
+    suckservo3.write(180);+
     delay(50); 
     //Serial.println("inner");
   }
