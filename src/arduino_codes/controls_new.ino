@@ -2,10 +2,8 @@
 
 #include <ros.h>
 #include <geometry_msgs/Point.h>
-// #include <std_msgs/String.h>
 #include <Servo.h>
 #include <std_msgs/Int64.h>
-// #include <std_msgs/Int64MultiArray.h>
 #include <math.h>
 #include <AccelStepper.h>
 
@@ -30,39 +28,29 @@ AccelStepper motor4(AccelStepper::DRIVER, stepPinM4, dirPinM4);
 Servo myservo1;
 Servo myservo2;
 
-// Servo suckservo1;
-// Servo suckservo2;
-// Servo suckservo3;
-// Servo suckservo4;
-
 std_msgs::Int64 confirmation_msg;
-std_msgs::Int64 suction_msg;
-// std_msgs::Int64MultiArray random_debug;
-// std_msgs::Int64 random_steps;
+std_msgs::Int64 msg_for_yaw;
 
 int counter_x = 1;
 int counter_y = 1;
 int counter_z = 100;
 int counter_servo = 100;
-// int counter = 68;
 
-// int tray_r = 980/2;
 int tray_r = 0;
 int tray_theta= 155;
-// int tray_z = 1537/2 ;
 int tray_z = 0 ;
+int yaw_r = 10;
 
 int steps_x;
 int steps_y;
 int steps_z,task;
+int yaw_msg = 100;
 
 ros::Publisher confirmation ("/info_from_arduino", &confirmation_msg); //publish on completion of task
-ros::Publisher suction ("/task_for_suction", &suction_msg); //publish on completion of task
+ros::Publisher yaw ("/yaw_task", &msg_for_yaw); 
 
-// ros::Publisher randomness ("/okbro", &random_debug);
-// ros::Publisher debugger ("/debugging", &random_steps);
 void angles_callback(const std_msgs::Int64& msg) {
-  nh.loginfo("task aaya");
+nh.loginfo("task aaya");
 
 int64_t combined_msg = msg.data;
 
@@ -106,12 +94,11 @@ int64_t combined_msg = msg.data;
     steps_y = tray_theta - steps_y;
     steps_z = -(steps_z);
  }
-//  if(task == 1){
-//   nh.loginfo("task 1 hi hai bhai");
-//  }
-
-suction_msg.data = task;
-suction.publish(&suction_msg);
+ if(task==3){
+  steps_x = yaw_r - steps_x;
+  steps_y = tray_theta - steps_y;
+  steps_z = -(steps_z);
+ }
 
  if (steps_x > 0) {
     digitalWrite(dirPinM1, HIGH); // Set direction forward
@@ -134,16 +121,18 @@ suction.publish(&suction_msg);
   motor1.move(steps_x);
   motor2.move(steps_y);
   motor3.move(steps_z);
-  nh.loginfo("callback ke end me");
-    
-  // Implement your motor control logic for steps_x here
+  nh.loginfo("callback ke end me");    
+}
+
+void yaw_callback(const std_msgs::Int64& msg) {
+yaw_msg = msg.data;
 }
 
 ros::Subscriber<std_msgs::Int64> angles("/motor/target_angles", &angles_callback);  //to take info
+ros::Subscriber<std_msgs::Int64> confirmation_from_yaw("/yaw_confirm", &yaw_callback);  //to take info
 
 void setup() {
-    // Initialize your stepper motors and servo here
-    // Set the maximum speed and acceleration
+
   motor1.setMaxSpeed(2800.0);
   motor1.setAcceleration(2000.0);
 
@@ -171,35 +160,24 @@ void setup() {
   pinMode(dirPinM1, OUTPUT);
   pinMode(dirPinM2, OUTPUT);
   pinMode(dirPinM3, OUTPUT);
-  
-// //sucktion 1 mechanism 
-//    suckservo1.attach(52);
-//    suckservo1.write(0);
-//     suckservo2.attach(38);
-//    suckservo2.write(0);
-
-//     suckservo3.attach(0);
-//    suckservo3.write(0);
-//     suckservo4.attach(46);
-//    suckservo4.write(0);
     
 //sucktion 2 mechanim
     myservo1.attach(11);
     myservo1.write(0);                 //degree 110 is the downward position as per night of dec19th 
     nh.initNode();
     nh.subscribe(angles);
-    nh.advertise(suction);
+    nh.subscribe(confirmation_from_yaw);
+    nh.advertise(yaw);
     nh.advertise(confirmation);
-    // nh.advertise(randomness);
-    // nh.advertise(debugger);
     Serial.begin(57600);
 }
 
+
+
 void loop() {
-    nh.spinOnce();
-    // delay(100);
-    // nh.loginfo("void loop me gaya");
-    
+  nh.spinOnce();
+
+
 if (task == 1){
   nh.loginfo("task 1");
   
@@ -254,7 +232,161 @@ if(counter_z==0 && counter_x ==0) {
     delay(1000) ;
     }
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+else if (task == 3){    
+nh.loginfo(" task 3 me ghusa");
 
+if(counter_z == 4 ){ 
+    if (motor3.distanceToGo() != 0) {
+    motor3.run();
+    nh.loginfo("z kam");
+  }
+  else {                                          // MAKE SURE THERE IS NO INSTANCE WHERE TASK_3 RUNS DIRECTLY BEFORE TASK_4
+    counter_z = 15;    
+    counter_x = 14;
+    counter_y = 14;
+    digitalWrite(dirPinM3, HIGH);
+    motor3.move(tray_z);
+  }
+}
+
+if(counter_x ==14) {
+  if (motor1.distanceToGo() != 0) {
+  motor1.run();
+  }
+   else{
+     counter_x=99; //99 is random to make other counters in sync with task 4 function
+     msg_for_yaw.data = 69;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
+     yaw.publish(&msg_for_yaw);
+
+     motor1.move(tray_r - yaw_r);
+     if (tray_r - yaw_r > 0) {
+            digitalWrite(dirPinM1, HIGH); // Set direction forward
+        } 
+        else {
+            digitalWrite(dirPinM1, LOW); // Set direction backward
+        } 
+
+     delay(100);   // extra delay
+  }
+}
+
+if (counter_y == 14) {  
+  if (motor2.distanceToGo() != 0) {
+  motor2.run();
+  }
+  else{
+  counter_y= 16;     
+    delay(500) ;
+  }
+}
+
+if (counter_y == 16 && counter_z == 15 && yaw_msg == 1) {     //yaw_msg = 1 should be sent when you find barcode
+  if(motor3.distanceToGo() != 0) {
+     motor3.run();
+  }
+  
+  else{ 
+  counter_z = 16;                           //99 is random to make other counters in sync with task 4 function
+  delay(100);
+  }
+}
+
+if (counter_x == 99 && counter_z == 15 && yaw_msg == 1) {  //yaw_msg = 1 should be sent when you find barcode
+     //ASK SUMIT      
+  if(motor1.distanceToGo() != 0) {     
+     motor1.run();
+  }
+  
+  else{ 
+    counter_x = 16;
+    delay(100);
+  }
+}
+
+
+if(counter_z == 16 && counter_x == 16 && counter_y == 16) {
+
+   ////////suction drop mechanism /////// 
+
+        counter_z = 18;
+        counter_x = 18; 
+              
+        steps_x = -(tray_r);
+        steps_y = -(tray_theta);
+        steps_z = -(tray_z);
+        if (steps_x > 0) {
+            digitalWrite(dirPinM1, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM1, LOW); // Set direction backward
+        }
+        
+        if (steps_y > 0) {
+            digitalWrite(dirPinM2, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM2, LOW); // Set direction backward
+        }
+
+        if (steps_z > 0) {
+            digitalWrite(dirPinM3, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM3, LOW); // Set direction backward
+        }
+
+        motor1.move(steps_x);
+        motor2.move(steps_y);
+        motor3.move(steps_z);
+
+        delay(500);  // extra delay
+}
+
+if (counter_z==18 ) {
+    nh.loginfo("z comes back from tray_z ");
+    if(motor3.distanceToGo() != 0) {
+     motor3.run();
+     }
+     else{
+     counter_z = 19;                    //15 means reached initial head top
+     delay(100) ;
+     }
+}
+
+if (counter_x ==18) {
+   if (motor1.distanceToGo() != 0) {                         // x brings to initial position
+  motor1.run();
+  }
+  
+  else{
+  counter_x = 19;
+  counter_y =18;
+  // servo back to 90 degree
+      delay(100) ; 
+  for(int j=110 ; j >=0 ; j--) {
+  myservo1.write (j);
+  delay(2);
+  }
+  }
+}
+
+if (counter_y==18 && counter_x ==19 && counter_z ==19) {
+  if (motor2.distanceToGo() != 0) {
+  motor2.run();
+  }
+  else{
+  counter_y = 19;
+  delay(500) ;
+  }
+}
+
+if (counter_x == 19 && counter_y ==19 && counter_z ==19) {
+    confirmation_msg.data = 1;
+    confirmation.publish(&confirmation_msg);
+    delay(100);   // 2000 to 100
+    counter_y = 1;
+    counter_x = 1;
+}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 else if (task == 4){    
 nh.loginfo(" task 4 me ghusa");
 
@@ -305,12 +437,9 @@ if (counter_x == 6 && counter_y ==6 && counter_z == 5) {
 }
 
 if(counter_z ==6 && counter_x == 6 && counter_y ==6) {
-    // deactivate suction
-    // nh.loginfo("galat jagah ghus gaya bc4");
-       // add suction publisher
-         suction_msg.data = 1;
-         suction.publish(&suction_msg);
-//        delay(1000);
+
+/////////////suction drop mechanism ////////////////////////////////
+
         counter_z =8;
         counter_x =8; 
               //10 is the counter to make every motor back to initial position
@@ -390,4 +519,6 @@ if (counter_x == 9 && counter_y ==9 && counter_z ==9) {
 }
 confirmation_msg.data = 0;
 confirmation.publish(&confirmation_msg);
+msg_for_yaw.data = 16;
+yaw.publish(&msg_for_yaw);
 }  
