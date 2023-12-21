@@ -160,7 +160,7 @@
 #         rospy.loginfo("Node terminated")
 
 import rospy
-from std_msgs.msg import String, Int64
+from std_msgs.msg import String, Int64, Float64
 import sys
 
 class DMNode():
@@ -168,7 +168,7 @@ class DMNode():
         self.task_topic_pub = rospy.Publisher('/task', Int64, queue_size=5)
         info_topic = '/dm/info_from_controls'
         self.info_topic_sub = rospy.Subscriber(info_topic, Int64, self.info_callback, queue_size = 5)
-        self.barcode_sub = rospy.Subscriber('/barcode_area', Int64, self.barcode_callback, queue_size=5)
+        self.barcode_sub = rospy.Subscriber('/barcode_area', Float64, self.barcode_callback, queue_size=5)
         self.rate = rospy.Rate(10)
 
         self.info_list = {'Reached_trolley_top': 0, 'Box_picked': 1, 'Reached_tray': 2, 'Barcode_found': 3, 'No_target_position_from_cv_found': 4}
@@ -205,7 +205,7 @@ class DMNode():
                 self.task_to_pub = 'Backward_to_final'
 
             else :
-                self.task_to_pub = 'Backward_to_tray'
+                self.task_to_pub = 'Find_barcode'
 
         elif (self.info == 2):
             self.task_to_pub = 'Find_barcode'

@@ -32,7 +32,8 @@ class Box_Detection:
         # self.task = 1
         # self.task = 3 # for testing
         self.pub_display = rospy.Publisher('/display_picture', Image, queue_size=1)
-        self.detect()
+        self.tray_counter = 0
+        # self.detect()
     
     def undistort(self, image):
         camera_matrix = None
@@ -160,11 +161,9 @@ class Box_Detection:
             pass
 
     def tray_Callback(self, img_msg):
-        self.tray_image = img_msg
-        # print('hi')
-
-    def detect(self):
-        while(self.task == 3):
+        if (self.task == 3):
+            self.tray_image = img_msg
+            print('hi')
             bridge = CvBridge()
             try:
                 image = bridge.imgmsg_to_cv2(self.tray_image, "passthrough")
@@ -206,6 +205,55 @@ class Box_Detection:
 
             except Exception as e:
                 print(e)
+        else:
+            pass
+
+    # def detect(self):
+    #     print('hello')
+        
+    #     while(self.task == 3):
+    #         print('hiiiii')
+    #         bridge = CvBridge()
+    #         try:
+    #             image = bridge.imgmsg_to_cv2(self.tray_image, "passthrough")
+    #             start_time = time.time()
+    #             h, w, _ = image.shape
+
+    #             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #             # cv2.imshow('d',image)
+    #             # cv2.waitKey(0)
+    #             img = [image]
+    #             results = self.model2(img)
+    #             coordinates = results.xyxyn[0][:,:-1]
+    #             # print(coordinates)
+                
+    #             i = -1
+    #             highest_score = 0
+    #             index = 0
+    #             for box in coordinates:
+    #                 # print(box)
+    #                 x1, y1, x2, y2, score = box.tolist()
+    #                 # print(score)
+    #                 i = i+1
+    #                 if highest_score < score:
+    #                     highest_score = score
+    #                     index = i
+                    
+    #             main_box = coordinates.tolist()[index]
+    #             # print(main_box)
+    #             x1, y1, x2, y2, _ = main_box
+    #             # print(x1)
+
+    #             cropped_image = image[int(y1*h):int(y2*h+1), int(x1*w):int(x2*w+1)]  # multiplying for conversion to pixel coordinates
+
+    #             image_pub = bridge.cv2_to_imgmsg(cropped_image, "passthrough")
+
+    #             self.pub_cropped_img.publish(image_pub)
+    #             end_time = time.time()
+    #             print('time taken: ', (end_time-start_time))
+
+    #         except Exception as e:
+    #             print(e)
                 
             
 

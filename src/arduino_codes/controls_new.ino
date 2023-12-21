@@ -132,6 +132,8 @@ ros::Subscriber<std_msgs::Int64> angles("/motor/target_angles", &angles_callback
 ros::Subscriber<std_msgs::Int64> confirmation_from_yaw("/yaw_confirm", &yaw_callback);  //to take info
 
 void setup() {
+  pinMode(10, OUTPUT);
+  digitalWrite(RelayPin, LOW);
 
   motor1.setMaxSpeed(2800.0);
   motor1.setAcceleration(2000.0);
@@ -180,6 +182,7 @@ void loop() {
 
 if (task == 1){
   nh.loginfo("task 1");
+  digitalWrite(10, LOW);
   
 if(counter_y==1){
     nh.loginfo("y chal raha");
@@ -306,8 +309,12 @@ if (counter_x == 99 && counter_z == 15 && yaw_msg == 1) {  //yaw_msg = 1 should 
 
 
 if(counter_z == 16 && counter_x == 16 && counter_y == 16) {
+  for(int j=110 ; j >=0 ; j--) {
+  myservo1.write (j);
+  delay(2);
 
    ////////suction drop mechanism /////// 
+   digitalWrite(10, HIGH);
 
         counter_z = 18;
         counter_x = 18; 
@@ -361,9 +368,7 @@ if (counter_x ==18) {
   counter_y =18;
   // servo back to 90 degree
       delay(100) ; 
-  for(int j=110 ; j >=0 ; j--) {
-  myservo1.write (j);
-  delay(2);
+  
   }
   }
 }
@@ -439,6 +444,7 @@ if (counter_x == 6 && counter_y ==6 && counter_z == 5) {
 if(counter_z ==6 && counter_x == 6 && counter_y ==6) {
 
 /////////////suction drop mechanism ////////////////////////////////
+digitalWrite(10, HIGH);
 
         counter_z =8;
         counter_x =8; 

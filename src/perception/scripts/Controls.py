@@ -137,6 +137,62 @@ class MotorControlNode:
                 self.motor_angles_pub.publish(angles_to_pub)
             else:
                 print('No position from cv')
+
+        elif (self.task == 3):
+            # angles = [None]*4
+            # angles[0] = self.task
+            # angles[1] = int(self.steps_x)
+            # angles[2] = int(self.steps_y)
+            # angles[3] = int(self.steps_z)
+            # print(angles)
+            # angles_to_pub = Int64MultiArray()
+            # angles_to_pub.data = angles
+            # for i in range(5):
+            #     self.motor_angles_pub.publish(angles_to_pub)
+            #     print("publish kiya")
+            
+            if (self.steps_x != None):
+                print("executing task 3")
+                # angles = [None]*4
+                # angles[0] = self.task
+                # angles[1] = int(self.steps_x)
+                # angles[2] = int(self.steps_y)
+                # angles[3] = int(self.steps_z)
+                
+                # angles_to_pub = Int64MultiArray()
+                # angles_to_pub.data = angles
+                # packed_data = (int(self.steps_z) << 27) | (int(self.steps_y) << 15) | (int(self.steps_x) << 3) | self.task  
+                
+                x,y,z = '','',''
+                t = str(self.task)
+                if(self.steps_x < 0):
+                    m = str(abs(self.steps_x))
+                    x = '1'+'0'*(4-len(m))+m
+                else:
+                    m = str(abs(self.steps_x))
+                    x = '0'+'0'*(4-len(m))+m
+                if(self.steps_y < 0):
+                    m = str(abs(self.steps_y))
+                    y = '1'+'0'*(4-len(m))+m
+                else:
+                    m = str(abs(self.steps_y))
+                    y = '0'+'0'*(4-len(m))+m
+                if(self.steps_z < 0):
+                    m = str(abs(self.steps_z))
+                    z = '1'+'0'*(4-len(m))+m
+                else:
+                    m = str(abs(self.steps_z))
+                    z = '0'+'0'*(4-len(m))+m
+                encoded_string = t+x+y+z
+                # print(encoded_string, len(encoded_string))
+                encoded_number = int(encoded_string)
+                
+                angles_to_pub = Int64()
+                angles_to_pub.data = encoded_number
+
+                self.motor_angles_pub.publish(angles_to_pub)
+            else:
+                print('No position from cv')
                                 
     def info_callback(self, data):
         self.confirmation = data.data
@@ -179,7 +235,7 @@ class MotorControlNode:
     def motor_target_callback(self, data):
         x_wrt_centre = data.x + 7.35    # distance of left sensor to suction centre in x
         y_wrt_centre = data.y + 6.5     # distance of left sensor to suction centre in y
-        z = data.z - 23.5 + 0.5  # distance of suction to zed camera and 0.5 add to ensure suction gets stuck to box
+        z = data.z - 23.5 + 1.5  # distance of suction to zed camera and 0.5 add to ensure suction gets stuck to box
         
         theta, r = self.calculate_polar_coordinates(x_wrt_centre,y_wrt_centre)
         
