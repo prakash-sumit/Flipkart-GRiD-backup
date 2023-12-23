@@ -18,7 +18,7 @@ class Barcode_Detection:
         CamImg_topic = '/cv/box_cropped'
         rospy.Subscriber(CamImg_topic, Image, self.Callback, queue_size=1)
         self.pub = rospy.Publisher('crop', Image, queue_size=5)
-        self.pub_barcode_area = rospy.Publisher('/barcode_area', Float64, queue_size=5)
+        self.pub_barcode_area = rospy.Publisher('/barcode_area', Float64, queue_size=1)
 
     def Callback(self,img_msg):
         global N
@@ -28,15 +28,24 @@ class Barcode_Detection:
         if(N >= 0):
             #try:
             image = bridge.imgmsg_to_cv2(img_msg, "passthrough")
+            print(image.shape)
 
-            lower = np.array([0, 35, 0])
-            upper = np.array([179, 255, 255])
+            # Set minimum and max BGR values to display
+            lower_bound = np.array([140, 150, 150])
+            upper_bound = np.array([255, 255, 255])
+            bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-            # Create HSV Image and threshold into a range.
-            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv, lower, upper)
-            output_mask = cv2.bitwise_and(image,image, mask= mask)
-            mask = cv2.bitwise_not(mask)
+            # Create mask within BGR range
+            mask = cv2.inRange(bgr, lower_bound, upper_bound)
+
+            # lower = np.array([0, 0, 0])
+            # upper = np.array([179, 34, 255])
+
+            # # Create HSV Image and threshold into a range.
+            # hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            # mask = cv2.inRange(hsv, lower, upper)
+            # output_mask = cv2.bitwise_and(image,image, mask= mask)
+            # mask = cv2.bitwise_not(mask)
             #mask_area = mask.shape[0]* mask.shape[1]
             #print(mask_area)
             # Find contours in the binary mask
@@ -48,8 +57,8 @@ class Barcode_Detection:
             for contour in contours:
                 area = cv2.contourArea(contour)
                 #print(area)
-                total_area += area
-                if area > 100:  # Adjust this threshold based on your needs
+                if area > 20000:  # Adjust this threshold based on your needs
+                    total_area += area
                     cv2.drawContours(result_image,[contour], -1, (0,255,0), 2)
 
             h, w, _ = image.shape
@@ -62,7 +71,7 @@ class Barcode_Detection:
                 print('barcode is present')
                 barcode_area.data = total_area
             else:
-                barcode_area.data = 0
+                barcode_area.data = total_area
                 print('barcode not present')
 
             #cv2.imwrite('contour.png', result_image)

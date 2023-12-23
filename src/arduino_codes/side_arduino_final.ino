@@ -12,16 +12,19 @@ AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin);
 
 void yaw_callback(const std_msgs::Int64& msg) {
   yaw_message = msg.data;
-  stepper.moveTo(200);
+  stepper.move(200);
 }
 
 ros::Subscriber<std_msgs::Int64> yaw("/yaw_confirm", &yaw_callback);
 
 void setup() {
   stepper.setMaxSpeed(33.33);  // Set maximum speed to achieve 50 degrees in 1 second
-  stepper.setAcceleration(100000);  // Set acceleration to achieve desired speed
+  stepper.setAcceleration(10000);  // Set acceleration to achieve desired speed
   nh.initNode();
   nh.subscribe(yaw);
+  pinMode(dirPin, OUTPUT);
+digitalWrite(dirPin, HIGH);
+//   stepper.setCurrentPosition(0);
   Serial.begin(57600);
 }
 
@@ -30,33 +33,24 @@ void loop() {
 
   // Move the stepper only when the specific condition is met
   if (yaw_message == 100) {
+    // digitalWrite(dirPin, HIGH);
     stepper.run();
-    // Your additional code here
   }
 
   // Check if the yaw_message is 1
-//   if (yaw_message == 1) {
-//     // Get the current position of the stepper motor
-//     int currentPosition = stepper.currentPosition();
-
-//     // Calculate the new target position 20 degrees backward
-//     int targetPosition = currentPosition - 11;
-
-//     // Set the new target position
-//     stepper.moveTo(targetPosition);
-
-//     while(stepper.distanceToGo() != 0) {
-//         stepper.run() ;
-//     }
-//     // Reset the yaw_message to avoid continuous movement
-//     yaw_message = 0;
-//   }
+   if (yaw_message == 1) {
+// digitalWrite(dirPin, LOW);
+    stepper.move(-12);
+    stepper.runToPosition();
+     // Reset the yaw_message to avoid continuous movement
+     yaw_message = 0;
+   }
 
   if (yaw_message == 10){
-  stepper.moveTo(0);
-  while (stepper.distanceToGo() != 0) {
-      stepper.run();
-    }
+// digitalWrite(dirPin, LOW);
+ int curr_pos = stepper.currentPosition()
+  stepper.move(-curr_pos);
+  stepper.runToPosition();
   yaw_message = 0 ;
   }
 }

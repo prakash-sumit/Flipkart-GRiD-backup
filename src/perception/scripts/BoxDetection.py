@@ -27,13 +27,19 @@ class Box_Detection:
         rospy.Subscriber(Tray_cam_topic, Image, self.tray_Callback)
         self.pub_cropped_img = rospy.Publisher('/cv/box_cropped', Image, queue_size=5)
         self.pub_target_coordinates = rospy.Publisher('/motor/target_coordinates', Point, queue_size=5)
+        rospy.Subscriber('/yaw_confirm', Int64, self.yaw_task_Callback, queue_size=5)
         # self.pub_target_coordinates = rospy.Publisher('/actual_coordinates', Point, queue_size=5)
         self.task = None
+        self.yaw_task = None
+        # self.yaw_task = 100
         # self.task = 1
         # self.task = 3 # for testing
         self.pub_display = rospy.Publisher('/display_picture', Image, queue_size=1)
         self.tray_counter = 0
         # self.detect()
+
+    def yaw_task_Callback(self, data):
+        self.yaw_task = data.data
     
     def undistort(self, image):
         camera_matrix = None
@@ -113,8 +119,8 @@ class Box_Detection:
             print(closest_point)
             target_coordinate = Point()
             target_coordinate.z = self.depth_image[closest_point[1], closest_point[0]]/10   # 1,0 coz conversion from x-y to pixel coordinate system
-            target_coordinate.x = (616 - closest_point[0])*(0.00183*target_coordinate.z + 0.00436)    # conversion factor
-            target_coordinate.y = (365 - closest_point[1])*(0.00183*target_coordinate.z + 0.00436)    # conversion factor
+            target_coordinate.x = (616 - closest_point[0])*(0.0018283*target_coordinate.z + 0.0043574)    # conversion factor
+            target_coordinate.y = (365 - closest_point[1])*(0.0018283*target_coordinate.z + 0.0043574)    # conversion factor
             # target_coordinate.x = closest_point[0]
             # target_coordinate.y = closest_point[1]
 
@@ -161,7 +167,7 @@ class Box_Detection:
             pass
 
     def tray_Callback(self, img_msg):
-        if (self.task == 3):
+        if (self.yaw_task == 100):
             self.tray_image = img_msg
             print('hi')
             bridge = CvBridge()
@@ -195,7 +201,7 @@ class Box_Detection:
                 x1, y1, x2, y2, _ = main_box
                 # print(x1)
 
-                cropped_image = image[int(y1*h):int(y2*h+1), int(x1*w):int(x2*w+1)]  # multiplying for conversion to pixel coordinates
+                cropped_image = image[int(y1*h+ 20):int(y2*h-20), int(x1*w+40):int(x2*w-40)]  # multiplying for conversion to pixel coordinates
 
                 image_pub = bridge.cv2_to_imgmsg(cropped_image, "passthrough")
 

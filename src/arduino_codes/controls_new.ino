@@ -39,7 +39,7 @@ int counter_servo = 100;
 int tray_r = 0;
 int tray_theta= 155;
 int tray_z = 0 ;
-int yaw_r = 10;
+int yaw_r = -260;
 
 int steps_x;
 int steps_y;
@@ -366,6 +366,10 @@ if (counter_x ==18) {
   else{
   counter_x = 19;
   counter_y =18;
+
+  msg_for_yaw.data = 10;
+  yaw.publish(&msg_for_yaw); 
+
   // servo back to 90 degree
       delay(100) ; 
   
@@ -525,6 +529,6 @@ if (counter_x == 9 && counter_y ==9 && counter_z ==9) {
 }
 confirmation_msg.data = 0;
 confirmation.publish(&confirmation_msg);
-msg_for_yaw.data = 16;
-yaw.publish(&msg_for_yaw);
+// msg_for_yaw.data = 16;
+// yaw.publish(&msg_for_yaw);   // Call Sumit if wo continous publishing wala issue aata hai. DONT uncomment without calling WARNA FUCK HOJAYEGA
 }  
