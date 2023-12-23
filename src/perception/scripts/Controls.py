@@ -200,7 +200,7 @@ class MotorControlNode:
         if (self.task == 1 and self.confirmation == 1):
             self.pub_to_dm.publish(1)
             self.confirmation = 0
-        elif (self.task == 4 and self.confirmation == 1):
+        elif ((self.task == 4 or self.task == 3) and self.confirmation == 1):
             self.steps_x = None
             self.steps_y = None
             self.steps_z = None

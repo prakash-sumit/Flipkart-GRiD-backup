@@ -18,7 +18,7 @@ void yaw_callback(const std_msgs::Int64& msg) {
 ros::Subscriber<std_msgs::Int64> yaw("/yaw_confirm", &yaw_callback);
 
 void setup() {
-  stepper.setMaxSpeed(33.33);  // Set maximum speed to achieve 50 degrees in 1 second
+  stepper.setMaxSpeed(33.33);  // Set maximum speed to achieve 60 degrees in 1 second
   stepper.setAcceleration(10000);  // Set acceleration to achieve desired speed
   nh.initNode();
   nh.subscribe(yaw);

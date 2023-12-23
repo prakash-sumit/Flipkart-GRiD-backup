@@ -32,7 +32,7 @@ class Box_Detection:
         self.task = None
         self.yaw_task = None
         # self.yaw_task = 100
-        # self.task = 1
+        self.task = 1
         # self.task = 3 # for testing
         self.pub_display = rospy.Publisher('/display_picture', Image, queue_size=1)
         self.tray_counter = 0
@@ -150,7 +150,7 @@ class Box_Detection:
             
             # self.pub_cropped_img.publish(cropped_image)
 
-            self.task = None  # comment for testing
+            # self.task = None  # comment for testing
             #time.sleep(0.5) # ??
             # except:
             #     print('No box detected')

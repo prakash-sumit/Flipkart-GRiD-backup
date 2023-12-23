@@ -5,13 +5,14 @@ def nothing(x):
     pass
 
 # Load the image
-image = cv2.imread('/home/sedrica/Downloads/a.jpg')  # Replace with the path to your image
+image = cv2.imread('/home/sedrica/Pictures/b.png')  # Replace with the path to your image
 
 # Create a window
 cv2.namedWindow('image')
 
 # Set minimum and max BGR values to display
-lower_bound = np.array([182, 151, 166])
+# lower_bound = np.array([182, 151, 166])
+lower_bound = np.array([140, 150, 150])
 upper_bound = np.array([255, 255, 255])
 
 # Create mask within BGR range

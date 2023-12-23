@@ -126,6 +126,7 @@ int64_t combined_msg = msg.data;
 
 void yaw_callback(const std_msgs::Int64& msg) {
 yaw_msg = msg.data;
+nh.loginfo("yaw callback run hua");
 }
 
 ros::Subscriber<std_msgs::Int64> angles("/motor/target_angles", &angles_callback);  //to take info
@@ -133,7 +134,7 @@ ros::Subscriber<std_msgs::Int64> confirmation_from_yaw("/yaw_confirm", &yaw_call
 
 void setup() {
   pinMode(10, OUTPUT);
-  digitalWrite(RelayPin, LOW);
+  digitalWrite(10, LOW);
 
   motor1.setMaxSpeed(2800.0);
   motor1.setAcceleration(2000.0);
@@ -237,7 +238,7 @@ if(counter_z==0 && counter_x ==0) {
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 else if (task == 3){    
-nh.loginfo(" task 3 me ghusa");
+// nh.loginfo(" task 3 me ghusa");
 
 if(counter_z == 4 ){ 
     if (motor3.distanceToGo() != 0) {
@@ -256,6 +257,7 @@ if(counter_z == 4 ){
 if(counter_x ==14) {
   if (motor1.distanceToGo() != 0) {
   motor1.run();
+  nh.loginfo("x to yaw_r");
   }
    else{
      counter_x=99; //99 is random to make other counters in sync with task 4 function
@@ -277,6 +279,7 @@ if(counter_x ==14) {
 if (counter_y == 14) {  
   if (motor2.distanceToGo() != 0) {
   motor2.run();
+  nh.loginfo("y chala");
   }
   else{
   counter_y= 16;     
@@ -287,23 +290,27 @@ if (counter_y == 14) {
 if (counter_y == 16 && counter_z == 15 && yaw_msg == 1) {     //yaw_msg = 1 should be sent when you find barcode
   if(motor3.distanceToGo() != 0) {
      motor3.run();
+     nh.loginfo("z chala after find_barcode");
   }
   
   else{ 
   counter_z = 16;                           //99 is random to make other counters in sync with task 4 function
   delay(100);
+  nh.loginfo("locha hogya");
   }
 }
 
-if (counter_x == 99 && counter_z == 15 && yaw_msg == 1) {  //yaw_msg = 1 should be sent when you find barcode
+if (counter_x == 99  && yaw_msg == 1) {  //yaw_msg = 1 should be sent when you find barcode
      //ASK SUMIT      
   if(motor1.distanceToGo() != 0) {     
      motor1.run();
+     nh.loginfo("x chala after fb");
   }
   
-  else{ 
+  else{  
     counter_x = 16;
     delay(100);
+     nh.loginfo("x me locha hogya");
   }
 }
 
@@ -312,6 +319,7 @@ if(counter_z == 16 && counter_x == 16 && counter_y == 16) {
   for(int j=110 ; j >=0 ; j--) {
   myservo1.write (j);
   delay(2);
+  nh.loginfo("suction dropped");
 
    ////////suction drop mechanism /////// 
    digitalWrite(10, HIGH);

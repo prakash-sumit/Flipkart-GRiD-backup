@@ -98,7 +98,7 @@ class Barcode_Detection:
                 self.task_to_controls = Int64()
                 self.current_area = area.data
 
-                if(self.current_area - float(self.previous_area) >= -1500):
+                if(self.current_area - float(self.previous_area) >= -585):
                     # self.task_to_controls.data = 0  # rotate
                     print(self.current_area - self.previous_area)
 

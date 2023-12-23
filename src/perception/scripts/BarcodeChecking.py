@@ -33,10 +33,10 @@ class Barcode_Detection:
             # Set minimum and max BGR values to display
             lower_bound = np.array([140, 150, 150])
             upper_bound = np.array([255, 255, 255])
-            bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            # bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
             # Create mask within BGR range
-            mask = cv2.inRange(bgr, lower_bound, upper_bound)
+            mask = cv2.inRange(image, lower_bound, upper_bound)
 
             # lower = np.array([0, 0, 0])
             # upper = np.array([179, 34, 255])
@@ -57,7 +57,7 @@ class Barcode_Detection:
             for contour in contours:
                 area = cv2.contourArea(contour)
                 #print(area)
-                if area > 20000:  # Adjust this threshold based on your needs
+                if area > 780:  # Adjust this threshold based on your needs
                     total_area += area
                     cv2.drawContours(result_image,[contour], -1, (0,255,0), 2)
 
@@ -67,11 +67,11 @@ class Barcode_Detection:
             #print(total_area)
             barcode_area = Float64()
 
-            if(float(total_area/image_area) >= 0.1):
+            if(float(total_area/image_area) >= 0.156):
                 print('barcode is present')
-                barcode_area.data = total_area
+                barcode_area.data = total_area/image_area * 100000
             else:
-                barcode_area.data = total_area
+                barcode_area.data = total_area/image_area * 100000
                 print('barcode not present')
 
             #cv2.imwrite('contour.png', result_image)
