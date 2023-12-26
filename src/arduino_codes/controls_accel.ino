@@ -1,6 +1,5 @@
 #include <AccelStepper.h>
 
-
 // Define the pins for the stepper motor
 #define STEP_PIN 2
 #define DIR_PIN 4

@@ -11,11 +11,11 @@ class MotorControlNode:
         self.task = None
         rospy.Subscriber('/info_from_arduino', Int64, self.info_callback, queue_size=5)
         self.pub_to_dm = rospy.Publisher('/dm/info_from_controls', Int64, queue_size=5)
-        self.curr_poss = 42.1  # distance from suction centre to shaft centre
+        self.curr_poss = 42.39  # distance from suction centre to shaft centre        #42.1 before
         self.motor_angles_pub = rospy.Publisher('/motor/target_angles', Int64, queue_size=1)
         self.motor_target_sub = rospy.Subscriber('/motor/target_coordinates', Point, self.motor_target_callback, queue_size=5)
-        rospy.Subscriber('/task_for_suction', Int64, self.suction_callback, queue_size=1)
-        self.suction_pub = rospy.Publisher('/suction', Int64, queue_size=5)
+        self.suck_drop = rospy.Subscriber('/suction_drop', Int64, self.suck_drop_callback, queue_size=5)
+        self.yaw_pub = rospy.Publisher('/yaw_confirm', Int64, queue_size=5)
         
         self.steps_x = None
         self.steps_y = None
@@ -23,11 +23,14 @@ class MotorControlNode:
         
         self.confirmation = 0
             
-    def suction_callback(self, data):
-        self.suction_msg = data.data
-        to_pub = Int64()
-        to_pub.data = self.suction_msg
-        self.suction_pub.publish(to_pub)
+    def suck_drop_callback(self, data):
+        self.suction_drop_msg = data.data
+        if (self.suction_drop_msg == 1503):
+            self.yaw_pub.publish(1503)
+
+        else:
+            pass
+            
         
     def task_callback(self, data):
         self.task = data.data
@@ -200,11 +203,18 @@ class MotorControlNode:
         if (self.task == 1 and self.confirmation == 1):
             self.pub_to_dm.publish(1)
             self.confirmation = 0
-        elif ((self.task == 4 or self.task == 3) and self.confirmation == 1):
+        elif (self.task == 4  and self.confirmation == 1):
             self.steps_x = None
             self.steps_y = None
             self.steps_z = None
             
+            self.pub_to_dm.publish(0)
+            self.confirmation = 0
+        elif (self.task == 3 and self.confirmation == 1):
+            self.steps_x = None
+            self.steps_y = None
+            self.steps_z = None
+                
             self.pub_to_dm.publish(0)
             self.confirmation = 0
         elif (self.confirmation == 0):
@@ -235,32 +245,36 @@ class MotorControlNode:
     def motor_target_callback(self, data):
         x_wrt_centre = data.x + 7.35    # distance of left sensor to suction centre in x
         y_wrt_centre = data.y + 6.5     # distance of left sensor to suction centre in y
-        z = data.z - 23.5 + 1.5  # distance of suction to zed camera and 0.5 add to ensure suction gets stuck to box
+        z = data.z - 23.5 + 1.5   # distance of suction to zed camera and 0.5 add to ensure suction gets stuck to box 
         
         theta, r = self.calculate_polar_coordinates(x_wrt_centre,y_wrt_centre)
         
         # self.steps_x = math.floor(r / 0.0384) # for 400 steps 
-        self.steps_x = math.floor(r / 0.0192) # for 800 steps 
+        self.steps_x = math.floor(r / 0.01863933) # for 800 steps 
         # self.steps_x = math.floor(r / 0.0768)   # for 200 steps 
         # self.steps_x = math.floor(r / 0.0024) # for 6400 steps
         
-        self.steps_y = math.floor((theta) * 2.222)   # for 800 steps
+        self.steps_y = math.ceil(theta * 2.222)   # for 800 steps
         
         # self.steps_z = math.floor((z - 20.32) / 0.018) # for 800 steps
         # self.steps_z = math.floor((z - 20 + 1) / 0.036) # for 400 steps          # -33 
-        # if self.steps_x < 0 and self.steps_y < 0 :
-        #     self.steps_x += 25
-        #     z = z+1   
-        # elif self.steps_x >0 and self.steps_y<0:
-        #     z -= 1.5
-        #     self.steps_x += 120
-        # elif self.steps_x <0 and self.steps_y>0:
-        #     self.steps_x += 142
-        #     self.steps_y += 4
-        # elif self.steps_x >0 and self.steps_y>0:
-        #     self.steps_x += 265
-        #     self.steps_y += 4
-        #     z-= 2.5
+
+        if self.steps_x >0 and self.steps_y<0:
+            if z > 75 :
+                z+=0.5
+            self.steps_x += 25
+        elif self.steps_x <0 and self.steps_y>0:
+            self.steps_x += 250
+            self.steps_y += 26
+            z -= 1.1
+        elif self.steps_x >0 and self.steps_y>0:
+            self.steps_x += 120
+            self.steps_y += 16
+            z-= 1.3
+        elif self.steps_x >0 and self.steps_y<0:
+            z+=0.5
+            self.steps_x += 25
+
         # self.steps_z = math.floor((z - 20.32) / 0.036) # for 400 steps          # -33
         self.steps_z = math.floor((z) / 0.018) # for 800 steps          # -33 
         # # self.steps_z = math.floor((z - 20 + 1.1) / 0.072) # for 200 steps        # -33 

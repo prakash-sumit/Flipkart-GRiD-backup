@@ -182,7 +182,7 @@ class DMNode():
 
     def barcode_callback(self, data):
         barcode_area = data.data
-        self.barcode = True if barcode_area >= 15625 else False  # for testing without barcode
+        # self.barcode = True if barcode_area >= 12000 else False  # for testing without barcode
 
     def info_callback(self, task):
         #self.info = self.info_list[task.data]
@@ -197,7 +197,7 @@ class DMNode():
 
             #self.is_barcode = is_barcode()
             #self.is_barcode = self.barcode
-            # self.barcode = True                # for testing without barcode
+            self.barcode = True                # for testing without barcode
             self.task_to_pub = 'Forward'
 
         elif (self.info == 1):

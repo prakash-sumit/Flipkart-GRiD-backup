@@ -30,13 +30,32 @@ class Barcode_Detection:
             image = bridge.imgmsg_to_cv2(img_msg, "passthrough")
             print(image.shape)
 
-            # Set minimum and max BGR values to display
+            lower = np.array([0, 0, 0])
+            upper = np.array([179, 26, 255])
+
+            # Create HSV Image and threshold into a range.
+            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            mask = cv2.inRange(hsv, lower, upper)
+            output = cv2.bitwise_and(image, image, mask=mask)
+            # cv2.imshow('hello', output)
+
+            # Convert the modified HSV image back to BGR
+            # result_image = cv2.cvtColor(output, cv2.COLOR_HSV2BGR)
+
+            # lower_bound = np.array([182, 151, 166])
             lower_bound = np.array([140, 150, 150])
             upper_bound = np.array([255, 255, 255])
-            # bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
             # Create mask within BGR range
-            mask = cv2.inRange(image, lower_bound, upper_bound)
+            mask = cv2.inRange(output, lower_bound, upper_bound)
+
+            # Set minimum and max BGR values to display
+            # lower_bound = np.array([140, 150, 150])
+            # upper_bound = np.array([255, 255, 255])
+            # # bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+            # # Create mask within BGR range
+            # mask = cv2.inRange(image, lower_bound, upper_bound)
 
             # lower = np.array([0, 0, 0])
             # upper = np.array([179, 34, 255])
@@ -54,24 +73,25 @@ class Barcode_Detection:
 
             result_image = image.copy()
             total_area = 0.0
+            h, w, _ = image.shape
+            image_area = h*w
+
             for contour in contours:
                 area = cv2.contourArea(contour)
                 #print(area)
-                if area > 780:  # Adjust this threshold based on your needs
+                if (area/image_area)*100000 > 4000:  # Adjust this threshold based on your needs
                     total_area += area
                     cv2.drawContours(result_image,[contour], -1, (0,255,0), 2)
 
-            h, w, _ = image.shape
-            image_area = h*w
             #print(image_area)
             #print(total_area)
             barcode_area = Float64()
 
             if(float(total_area/image_area) >= 0.156):
                 print('barcode is present')
-                barcode_area.data = total_area/image_area * 100000
+                barcode_area.data = (total_area/image_area) * 100000
             else:
-                barcode_area.data = total_area/image_area * 100000
+                barcode_area.data = (total_area/image_area) * 100000
                 print('barcode not present')
 
             #cv2.imwrite('contour.png', result_image)

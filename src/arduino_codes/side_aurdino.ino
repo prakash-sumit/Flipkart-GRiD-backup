@@ -18,6 +18,9 @@ void yaw_callback(const std_msgs::Int64& msg) {
 ros::Subscriber<std_msgs::Int64> yaw("/yaw_confirm", &yaw_callback);
 
 void setup() {
+  pinMode(10, OUTPUT);
+  digitalWrite(10, LOW);
+
   stepper.setMaxSpeed(33.33);  // Set maximum speed to achieve 50 degrees in 1 second
   stepper.setAcceleration(100000);  // Set acceleration to achieve desired speed
   nh.initNode();
@@ -52,11 +55,18 @@ void loop() {
 //     yaw_message = 0;
 //   }
 
+
   if (yaw_message == 10){
   stepper.moveTo(0);
   while (stepper.distanceToGo() != 0) {
       stepper.run();
     }
   yaw_message = 0 ;
+  }
+
+  if (yaw_message == 1503 ) {
+    digitalWrite(10, HIGH);
+    delay(1000);
+    digitalWrite(10, LOW);
   }
 }

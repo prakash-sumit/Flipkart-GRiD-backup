@@ -14,7 +14,7 @@ N = 0
 class Barcode_Detection:
 
     def __init__(self):
-        CamImg_topic = "/zed_camera/image"
+        CamImg_topic = "/camera1/image_raw"
         rospy.Subscriber(CamImg_topic, Image, self.Callback)
         self.pub = rospy.Publisher('crop', Image, queue_size=2)
     
@@ -40,7 +40,7 @@ class Barcode_Detection:
                 # img = self.undistort(img)
                 #img = img[130:230, 240:400]
                 #print(img.shape)
-                cv2.imwrite('/home/sedrica/images2/box{}.jpg'.format(N), img)
+                cv2.imwrite('/home/sedrica/sjcam_images/box{}.jpg'.format(N), img)
                 
                 print('image taken{}'.format(N))
                 time.sleep(5)

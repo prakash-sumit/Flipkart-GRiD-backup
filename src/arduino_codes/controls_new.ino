@@ -30,6 +30,7 @@ Servo myservo2;
 
 std_msgs::Int64 confirmation_msg;
 std_msgs::Int64 msg_for_yaw;
+std_msgs::Int64 suck_drop;
 
 int counter_x = 1;
 int counter_y = 1;
@@ -38,8 +39,8 @@ int counter_servo = 100;
 
 int tray_r = 0;
 int tray_theta= 155;
-int tray_z = 0 ;
-int yaw_r = -260;
+int tray_z = 0 ;    //for debugging
+int yaw_r = -160;
 
 int steps_x;
 int steps_y;
@@ -47,7 +48,8 @@ int steps_z,task;
 int yaw_msg = 100;
 
 ros::Publisher confirmation ("/info_from_arduino", &confirmation_msg); //publish on completion of task
-ros::Publisher yaw ("/yaw_task", &msg_for_yaw); 
+ros::Publisher yaw ("/yaw_task", &msg_for_yaw);
+ros::Publisher suction ("/suction_drop", &suck_drop); 
 
 void angles_callback(const std_msgs::Int64& msg) {
 nh.loginfo("task aaya");
@@ -133,8 +135,6 @@ ros::Subscriber<std_msgs::Int64> angles("/motor/target_angles", &angles_callback
 ros::Subscriber<std_msgs::Int64> confirmation_from_yaw("/yaw_confirm", &yaw_callback);  //to take info
 
 void setup() {
-  pinMode(10, OUTPUT);
-  digitalWrite(10, LOW);
 
   motor1.setMaxSpeed(2800.0);
   motor1.setAcceleration(2000.0);
@@ -148,8 +148,8 @@ void setup() {
   // Set the initial position to 0
   motor2.setCurrentPosition(0);
 
-  motor3.setMaxSpeed(2000.0);
-  motor3.setAcceleration(1500.0);
+  motor3.setMaxSpeed(4000.0);
+  motor3.setAcceleration(3000.0);
 
   // Set the initial position to 0
   motor3.setCurrentPosition(0);
@@ -172,6 +172,7 @@ void setup() {
     nh.subscribe(confirmation_from_yaw);
     nh.advertise(yaw);
     nh.advertise(confirmation);
+    nh.advertise(suction);
     Serial.begin(57600);
 }
 
@@ -294,9 +295,15 @@ if (counter_y == 16 && counter_z == 15 && yaw_msg == 1) {     //yaw_msg = 1 shou
   }
   
   else{ 
-  counter_z = 16;                           //99 is random to make other counters in sync with task 4 function
+                           //99 is random to make other counters in sync with task 4 function
   delay(100);
   nh.loginfo("locha hogya");
+  for(int j=110 ; j >=0 ; j--) {
+  myservo1.write (j);
+  delay(2);}
+  
+  delay(100);
+  counter_z = 16;  
   }
 }
 
@@ -316,14 +323,12 @@ if (counter_x == 99  && yaw_msg == 1) {  //yaw_msg = 1 should be sent when you f
 
 
 if(counter_z == 16 && counter_x == 16 && counter_y == 16) {
-  for(int j=110 ; j >=0 ; j--) {
-  myservo1.write (j);
-  delay(2);
-  nh.loginfo("suction dropped");
 
+
+// delay(1000);
+  suck_drop.data = 1503;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
+  suction.publish(&suck_drop);
    ////////suction drop mechanism /////// 
-   digitalWrite(10, HIGH);
-
         counter_z = 18;
         counter_x = 18; 
               
@@ -367,25 +372,23 @@ if (counter_z==18 ) {
 }
 
 if (counter_x ==18) {
+  nh.loginfo("x comes back from tray_z ");
    if (motor1.distanceToGo() != 0) {                         // x brings to initial position
   motor1.run();
   }
   
   else{
-  counter_x = 19;
-  counter_y =18;
-
   msg_for_yaw.data = 10;
   yaw.publish(&msg_for_yaw); 
+  counter_x = 19;
+  counter_y =18;
+      delay(100) ;  
+  }
+  }
 
-  // servo back to 90 degree
-      delay(100) ; 
-  
-  }
-  }
-}
 
 if (counter_y==18 && counter_x ==19 && counter_z ==19) {
+  nh.loginfo("y comes back from tray_z ");
   if (motor2.distanceToGo() != 0) {
   motor2.run();
   }
@@ -456,7 +459,8 @@ if (counter_x == 6 && counter_y ==6 && counter_z == 5) {
 if(counter_z ==6 && counter_x == 6 && counter_y ==6) {
 
 /////////////suction drop mechanism ////////////////////////////////
-digitalWrite(10, HIGH);
+  suck_drop.data = 1503;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
+  suction.publish(&suck_drop);
 
         counter_z =8;
         counter_x =8; 
@@ -510,7 +514,7 @@ if (counter_x ==8) {
   counter_y =8;
   // servo back to 90 degree
       delay(100) ; 
-  for(int j=110 ; j >=0 ; j--) {
+  for(int j=105 ; j >=0 ; j--) {
   myservo1.write (j);
   delay(2);
   }
