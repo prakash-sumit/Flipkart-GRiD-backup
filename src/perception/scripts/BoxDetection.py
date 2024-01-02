@@ -3,8 +3,9 @@
 import rospy
 import cv2
 import numpy as np
+import math
 from sensor_msgs.msg import Image
-from std_msgs.msg import String, Int64
+from std_msgs.msg import String, Int64, Int64MultiArray
 from geometry_msgs.msg import Point
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -28,13 +29,17 @@ class Box_Detection:
         self.pub_cropped_img = rospy.Publisher('/cv/box_cropped', Image, queue_size=5)
         self.pub_target_coordinates = rospy.Publisher('/motor/target_coordinates', Point, queue_size=5)
         rospy.Subscriber('/yaw_confirm', Int64, self.yaw_task_Callback, queue_size=5)
+        self.pub_label = rospy.Publisher('/label', Int64, queue_size= 5)
+        self.pub_to_pcd = rospy.Publisher('/pixel_coordinates', Point, queue_size= 5)
         # self.pub_target_coordinates = rospy.Publisher('/actual_coordinates', Point, queue_size=5)
+        self.pub_slant_img = rospy.Publisher('/slant_image', Image, queue_size=5)
         self.task = None
         self.yaw_task = None
         # self.yaw_task = 100   # uncomment for sjcam testing
-        # self.task = 1
+        self.task = 1
         # self.task = 3 # for testing
         self.pub_display = rospy.Publisher('/display_picture', Image, queue_size=1)
+        rospy.Subscriber('/normal_vector', Int64MultiArray, self.normal_callback)
         self.tray_counter = 0
         # self.detect()
 
@@ -67,7 +72,11 @@ class Box_Detection:
         if(self.task == 1): 
             bridge = CvBridge()
             #try:
-            image = bridge.imgmsg_to_cv2(img_msg, "passthrough")
+            image_uncropped = bridge.imgmsg_to_cv2(img_msg, "passthrough")
+            _y1, _y2, _x1, _x2 = 0, 720, 0, 1280    # define trolley coordinates
+            image = image_uncropped[_y1:_y2, _x1:_x2]
+            self.image_save = image
+            # image = bridge.imgmsg_to_cv2(img_msg, "passthrough")
             # image = self.undistort(image)
             h, w, _ = image.shape
             print(image.shape)
@@ -77,8 +86,8 @@ class Box_Detection:
             # cv2.waitKey(0)
             img = [image]
             results = self.model(img)
-            coordinates = results.xyxyn[0][:,:-1]
-            filtered_boxes = coordinates[coordinates[:, 4] > 0.6, :4] # filter boxes by score > 0.6
+            coordinates = results.xyxyn[0]#[:,:-1]
+            filtered_boxes = coordinates[coordinates[:, 4] > 0.6] # filter boxes by score > 0.6
             print(coordinates)
             print(filtered_boxes)
 
@@ -94,7 +103,7 @@ class Box_Detection:
             image2 = image.copy()
 
             for box in filtered_boxes:
-                x1, y1, x2, y2 = box.tolist()
+                x1, y1, x2, y2, _, _ = box.tolist()
                 print(y1)
                 cv2.rectangle(image2, (int(x1*w), int(y1*h)), (int(x2*w), int(y2*h)), color, thickness)
                 midpoint_x = (x1 + x2) / 2
@@ -109,28 +118,34 @@ class Box_Detection:
             i =0
             # try:
             for i in range(len(midpoints)):
-                if(self.depth_image[midpoints[i][1], midpoints[i][0]] < closest_point_depth):  # 1,0 coz conversion from x-y to pixel coordinate system
-                    closest_point = midpoints[i]
-                    closest_point_depth = self.depth_image[midpoints[i][1], midpoints[i][0]]
+                if(self.depth_image[midpoints[i][1] + _y1, midpoints[i][0] + _x1] < closest_point_depth):  # 1,0 coz conversion from x-y to pixel coordinate system
+                    closest_point.append(midpoints[i][0] + _x1)
+                    closest_point.append(midpoints[i][1] + _y1)
+                    closest_point_depth = self.depth_image[midpoints[i][1] + _y1, midpoints[i][0] + _x1]
                     index = i
                     print(i)
-            print(self.depth_image[midpoints[i][1], midpoints[i][0]])
+            print(self.depth_image[midpoints[i][1] + _y1, midpoints[i][0] + _x1])
+            
+            _label = Int64()
+            _, _, _, _, _, label = filtered_boxes[index].tolist()
+            _label.data = int(label)
+            self.pub_label.publish(_label)
 
             print(closest_point)
             target_coordinate = Point()
             target_coordinate.z = self.depth_image[closest_point[1], closest_point[0]]/10   # 1,0 coz conversion from x-y to pixel coordinate system
-            target_coordinate.x = (645 - closest_point[0])*(0.0018283*target_coordinate.z + 0.0043574)    # conversion factor
+            target_coordinate.x = (645 - closest_point[0])*(0.0018283*target_coordinate.z + 0.0043574) - 1    # conversion factor
             target_coordinate.y = (355 - closest_point[1])*(0.0018283*target_coordinate.z + 0.0043574)    # conversion factor
             # target_coordinate.x = closest_point[0]
             # target_coordinate.y = closest_point[1]
 
-            cv2.circle(image2, (closest_point[0], closest_point[1]), 20, (255,0,0), thickness=2, lineType=8, shift=0)
+            cv2.circle(image2, (closest_point[0] - _x1, closest_point[1] - _y1), 20, (255,0,0), thickness=2, lineType=8, shift=0)
             # pub_target_coordinates.publish(target_coordinate)
 
-            x1, y1, x2, y2 = filtered_boxes[index].tolist()
+            x1, y1, x2, y2, _, _ = filtered_boxes[index].tolist()
             #print(np.array(image).shape)
             cropped_image = image[int(y1*h):int(y2*h+1), int(x1*w):int(x2*w+1)]  # multiplying for conversion to pixel coordinates
-            cv2.circle(cropped_image, (closest_point[0], closest_point[1]), 10, (255,0,0), thickness=2, lineType=8, shift=0)
+            # cv2.circle(cropped_image, (closest_point[0], closest_point[1]), 10, (255,0,0), thickness=2, lineType=8, shift=0)
             # circle_radius = 10
             # circle_color = (0, 0, 255)  # Red color in BGR format
             # circle_thickness = 2
@@ -142,6 +157,11 @@ class Box_Detection:
             image2 = bridge.cv2_to_imgmsg(image2, "passthrough")
             cropped_image = bridge.cv2_to_imgmsg(cropped_image, "passthrough")
 
+            self.pixel_coordinate = Point()
+            self.pixel_coordinate.x = closest_point[0]
+            self.pixel_coordinate.y = closest_point[1]
+            self.pixel_coordinate.z = self.depth_image[closest_point[1], closest_point[0]]/10    #random (fark nhi padta isse)
+            self.pub_to_pcd.publish(self.pixel_coordinate)
 
             if(target_coordinate.z > 30): # in cm
                 self.pub_cropped_img.publish(cropped_image)
@@ -150,7 +170,7 @@ class Box_Detection:
             
             # self.pub_cropped_img.publish(cropped_image)
 
-            self.task = None  # comment for testing
+            # self.task = None  # comment for testing
             #time.sleep(0.5) # ??
             # except:
             #     print('No box detected')
@@ -165,6 +185,28 @@ class Box_Detection:
                 return'''
         else:
             pass
+
+    def normal_callback(self, data):
+        bridge = CvBridge()
+        image = self.image_save
+        normal = data.data
+        point = [self.pixel_coordinate.x , self.pixel_coordinate.y, 0]
+        normal = normal / math.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
+        point2 = point + normal
+        # Create a blank image
+        image = np.zeros((300, 300, 3), dtype=np.uint8)
+        # Draw a line connecting the points on the image
+        cv2.line(image, tuple(point[:2]), tuple(point2[:2]), (0, 255, 0), 2)
+        # Draw the originating point
+        cv2.circle(image, tuple(point[:2]), 5, (0, 0, 255), -1)
+
+        vertical_direction = np.array([0, 0, 1])  # Assuming the vertical direction is along the z-axis
+        slant_angle = np.arccos(np.dot(normal, vertical_direction) / (np.linalg.norm(normal) * np.linalg.norm(vertical_direction)))
+        slant_angle_degrees = np.degrees(slant_angle)
+        cv2.putText(image, slant_angle_degrees, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = bridge.cv2_to_imgmsg(image, "passthrough")
+        self.pub_slant_img.publish(image)
 
     def tray_Callback(self, img_msg):
         if (self.yaw_task == 100):

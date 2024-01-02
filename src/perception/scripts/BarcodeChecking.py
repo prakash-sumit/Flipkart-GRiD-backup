@@ -31,23 +31,23 @@ class Barcode_Detection:
             print(image.shape)
 
             lower = np.array([0, 0, 0])
-            upper = np.array([179, 26, 255])
+            upper = np.array([179, 44, 255])    #26
 
             # Create HSV Image and threshold into a range.
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
             mask = cv2.inRange(hsv, lower, upper)
-            output = cv2.bitwise_and(image, image, mask=mask)
-            # cv2.imshow('hello', output)
+            # output = cv2.bitwise_and(image, image, mask=mask)
+            # # cv2.imshow('hello', output)
 
-            # Convert the modified HSV image back to BGR
-            # result_image = cv2.cvtColor(output, cv2.COLOR_HSV2BGR)
+            # # Convert the modified HSV image back to BGR
+            # # result_image = cv2.cvtColor(output, cv2.COLOR_HSV2BGR)
 
-            # lower_bound = np.array([182, 151, 166])
-            lower_bound = np.array([140, 150, 150])
-            upper_bound = np.array([255, 255, 255])
+            # # lower_bound = np.array([182, 151, 166])
+            # lower_bound = np.array([140, 150, 150])
+            # upper_bound = np.array([255, 255, 255])
 
-            # Create mask within BGR range
-            mask = cv2.inRange(output, lower_bound, upper_bound)
+            # # Create mask within BGR range
+            # mask = cv2.inRange(output, lower_bound, upper_bound)
 
             # Set minimum and max BGR values to display
             # lower_bound = np.array([140, 150, 150])
@@ -87,7 +87,7 @@ class Barcode_Detection:
             #print(total_area)
             barcode_area = Float64()
 
-            if(float(total_area/image_area) >= 0.156):
+            if(float(total_area/image_area) >= 0.08):
                 print('barcode is present')
                 barcode_area.data = (total_area/image_area) * 100000
             else:

@@ -264,6 +264,7 @@ if(counter_x ==14) {
      counter_x=99; //99 is random to make other counters in sync with task 4 function
      msg_for_yaw.data = 69;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
      yaw.publish(&msg_for_yaw);
+     nh.loginfo("69 starts the sj_cam");
 
      motor1.move(tray_r - yaw_r);
      if (tray_r - yaw_r > 0) {
@@ -380,6 +381,7 @@ if (counter_x ==18) {
   else{
   msg_for_yaw.data = 10;
   yaw.publish(&msg_for_yaw); 
+  nh.loginfo("yaw ko 10 publish hua")
   counter_x = 19;
   counter_y =18;
       delay(100) ;  

@@ -160,7 +160,7 @@ void setup() {
     
 //sucktion 2 mechanim
     myservo1.attach(11);
-    myservo1.write(0);                 //degree 110 is the downward position as per night of dec19th 
+    myservo1.write(50);                 //degree 110 is the downward position as per night of dec19th    >> 20 to 150 as of jan2 17:37
     nh.initNode();
     nh.subscribe(angles);
     nh.subscribe(confirmation_from_yaw);
@@ -198,7 +198,7 @@ if(counter_x==1) {
 }
 
 if(counter_servo ==1 && counter_y ==0 && counter_x ==0) {
-        for(int j=0 ; j <=110 ; j++) {
+        for(int j=50 ; j <=150 ; j++) {
         myservo1.write (j);
         delay(2);
         }
@@ -283,7 +283,7 @@ if (counter_y == 16 && counter_z == 15 && yaw_msg == 1) {     //yaw_msg = 1 shou
                            //99 is random to make other counters in sync with task 4 function
   delay(100);
   //("locha hogya");
-  for(int j=110 ; j >=0 ; j--) {
+  for(int j=150 ; j >=50 ; j--) {
   myservo1.write (j);
   delay(2);}
   
@@ -499,7 +499,7 @@ if (counter_x ==8) {
   counter_y =8;
   // servo back to 90 degree
     //   delay(100) ; 
-  for(int j=105 ; j >=0 ; j--) {
+  for(int j=150 ; j >=50 ; j--) {
   myservo1.write (j);
   delay(2);
   }

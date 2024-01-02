@@ -170,7 +170,7 @@ class DMNode():
         self.info_topic_sub = rospy.Subscriber(info_topic, Int64, self.info_callback, queue_size = 5)
         self.barcode_sub = rospy.Subscriber('/barcode_area', Float64, self.barcode_callback, queue_size=5)
         self.rate = rospy.Rate(10)
-
+        rospy.Subscriber('/label', Int64, self.label_callback)
         self.info_list = {'Reached_trolley_top': 0, 'Box_picked': 1, 'Reached_tray': 2, 'Barcode_found': 3, 'No_target_position_from_cv_found': 4}
         self.task_list = {'Start': 0, 'Forward': 1, 'Backward_to_tray': 2, 'Find_barcode': 3, 'Backward_to_final': 4}
 
@@ -180,9 +180,12 @@ class DMNode():
         
         #self.task = 0
 
+    def label_callback(self, data):
+        self.label = data.data
+
     def barcode_callback(self, data):
         barcode_area = data.data
-        # self.barcode = True if barcode_area >= 12000 else False  # for testing without barcode
+        self.barcode = True if barcode_area >= 8000 else False  # for testing without barcode
 
     def info_callback(self, task):
         #self.info = self.info_list[task.data]
@@ -197,11 +200,11 @@ class DMNode():
 
             #self.is_barcode = is_barcode()
             #self.is_barcode = self.barcode
-            self.barcode = True                # for testing without barcode
+            # self.barcode = True                # for testing without barcode
             self.task_to_pub = 'Forward'
 
         elif (self.info == 1):
-            if self.barcode :
+            if self.barcode or self.label == 1:
                 self.task_to_pub = 'Backward_to_final'
 
             else :
