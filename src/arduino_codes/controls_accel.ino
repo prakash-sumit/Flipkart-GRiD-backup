@@ -17,40 +17,15 @@ void setup() {
 
   // Set the direction pin as OUTPUT
   pinMode(DIR_PIN, OUTPUT);
+  digitalWrite(DIR_PIN, HIGH);
+
+  stepper.move(1000);
 
   // moveStepper(-200);
 }
 
 void loop() {
-  // Move forward 500 steps
-
-  // delay(1000); // Delay for 1 second
-
-  // Move backward 500 steps
-
-  moveStepper(400);
-
-  delay(1000); // Delay for 1 second
-
-  moveStepper(-400);
-
-  delay(1000); // Delay for 1 second
-}
-
-void moveStepper(long steps) {
-  // Set the direction based on the sign of steps
-  if (steps > 0) {
-    digitalWrite(DIR_PIN, HIGH); // Set direction forward
-  } 
-  else {
-    digitalWrite(DIR_PIN, LOW); // Set direction backward
-  }
-
-  // Move the stepper motor the specified number of steps
-  stepper.move(steps);
-
-  // Run the stepper motor until it reaches the target position
-  while (stepper.distanceToGo() != 0) {
+  if (stepper.distanceToGo() != 0) {
     stepper.run();
   }
 }

@@ -14,7 +14,7 @@ class MotorControlNode:
         self.curr_poss = 42.39  # distance from suction centre to shaft centre        #42.1 before
         self.motor_angles_pub = rospy.Publisher('/motor/target_angles', Int64, queue_size=1)
         self.motor_target_sub = rospy.Subscriber('/motor/target_coordinates', Point, self.motor_target_callback, queue_size=5)
-        self.suck_drop = rospy.Subscriber('/suction_drop', Int64, self.suck_drop_callback, queue_size=5)
+        # self.suck_drop = rospy.Subscriber('/suction_drop', Int64, self.suck_drop_callback, queue_size=5)
         self.yaw_pub = rospy.Publisher('/yaw_confirm', Int64, queue_size=5)
         
         self.steps_x = None
@@ -23,13 +23,13 @@ class MotorControlNode:
         
         self.confirmation = 0
             
-    def suck_drop_callback(self, data):
-        self.suction_drop_msg = data.data
-        if (self.suction_drop_msg == 1503):
-            self.yaw_pub.publish(1503)
+    # def suck_drop_callback(self, data):
+    #     self.suction_drop_msg = data.data
+    #     if (self.suction_drop_msg == 1503):
+    #         self.yaw_pub.publish(1503)
 
-        else:
-            pass
+    #     else:
+    #         pass
             
         
     def task_callback(self, data):
