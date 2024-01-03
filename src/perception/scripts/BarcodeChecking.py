@@ -31,7 +31,7 @@ class Barcode_Detection:
             print(image.shape)
 
             lower = np.array([0, 0, 0])
-            upper = np.array([179, 44, 255])    #26
+            upper = np.array([179, 30, 255])    #26
 
             # Create HSV Image and threshold into a range.
             hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)

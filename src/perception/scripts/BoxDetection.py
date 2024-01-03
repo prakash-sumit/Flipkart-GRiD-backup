@@ -36,7 +36,7 @@ class Box_Detection:
         self.task = None
         self.yaw_task = None
         # self.yaw_task = 100   # uncomment for sjcam testing
-        self.task = 1
+        # self.task = 1
         # self.task = 3 # for testing
         self.pub_display = rospy.Publisher('/display_picture', Image, queue_size=1)
         rospy.Subscriber('/normal_vector', Int64MultiArray, self.normal_callback)
@@ -69,7 +69,7 @@ class Box_Detection:
             rospy.logerr("Error processing depth image: %s", str(e))
 
     def Callback(self,img_msg):
-        if(self.task == 1): 
+        if(self.task == 1 or self.task == 2): 
             bridge = CvBridge()
             #try:
             image_uncropped = bridge.imgmsg_to_cv2(img_msg, "passthrough")
@@ -163,14 +163,14 @@ class Box_Detection:
             self.pixel_coordinate.z = self.depth_image[closest_point[1], closest_point[0]]/10    #random (fark nhi padta isse)
             self.pub_to_pcd.publish(self.pixel_coordinate)
 
-            if(target_coordinate.z > 30): # in cm
+            if(target_coordinate.z > 20): # in cm
                 self.pub_cropped_img.publish(cropped_image)
                 self.pub_display.publish(image2)
                 self.pub_target_coordinates.publish(target_coordinate)
             
             # self.pub_cropped_img.publish(cropped_image)
 
-            # self.task = None  # comment for testing
+            self.task = None  # comment for testing
             #time.sleep(0.5) # ??
             # except:
             #     print('No box detected')

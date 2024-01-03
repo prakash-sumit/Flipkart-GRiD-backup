@@ -37,45 +37,16 @@ void setup() {
 void loop() {
   nh.spinOnce();
 
-  // Move the stepper only when the specific condition is met
-  if (yaw_message == 100) {
-    // digitalWrite(dirPin, HIGH);
-    stepper.run();
-    if (stepper.distanceToGo() == 0) {
-      // If the stepper has moved 200 steps, publish value = 7 to "/bottom_barcode_confirm"
-      bottom_barcode_msg.data = 7;
-      bottom.publish(&bottom_barcode_msg);
-      yaw_message = 0;
-  }
-  }
-
-  // Check if the yaw_message is 1
-   if (yaw_message == 1) {
-// digitalWrite(dirPin, LOW);
-    stepper.move(-12);
-    stepper.runToPosition();
-     // Reset the yaw_message to avoid continuous movement
-     yaw_message = 0;
-   }
-
-  if (yaw_message == 10){
-// digitalWrite(dirPin, LOW);
- int curr_pos = stepper.currentPosition();
-  stepper.move(-curr_pos);
-  stepper.runToPosition();
-  yaw_message = 0 ;
-  }
-
   if (yaw_message == 1503 ) {
     digitalWrite(10, HIGH);
     delay(1000);
     digitalWrite(10, LOW);
+    delay(15);
     digitalWrite(10, HIGH);
     delay(1000);
     digitalWrite(10, LOW);
-    yaw_message = 0;
   }
-
+digitalWrite (10, LOW)
 //publish an arbitary value for aurdino-ros comunication
 bottom_barcode_msg.data = 111;
 bottom.publish(&bottom_barcode_msg);

@@ -172,7 +172,7 @@ class DMNode():
         self.rate = rospy.Rate(10)
         rospy.Subscriber('/label', Int64, self.label_callback)
         self.info_list = {'Reached_trolley_top': 0, 'Box_picked': 1, 'Reached_tray': 2, 'Barcode_found': 3, 'No_target_position_from_cv_found': 4}
-        self.task_list = {'Start': 0, 'Forward': 1, 'Backward_to_tray': 2, 'Find_barcode': 3, 'Backward_to_final': 4}
+        self.task_list = {'Start': 0, 'Forward': 1, 'Bottom_barcode': 2, 'Find_barcode': 3, 'Backward_to_final': 4}
 
         # self.publish_topic('Start')
         #print('hello')
@@ -211,7 +211,7 @@ class DMNode():
                 self.task_to_pub = 'Find_barcode'
 
         elif (self.info == 2):
-            self.task_to_pub = 'Find_barcode'
+            self.task_to_pub = 'Bottom_barcode'
 
         elif (self.info == 3):
             self.task_to_pub = 'Backward_to_final'

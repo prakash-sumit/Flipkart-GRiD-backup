@@ -1,24 +1,21 @@
-//task1 : x and z motors running together -> need to setup threshhold for z min when coming up in task 4
-
+//bottom barcode and also speed 
 #include <ros.h>
 #include <geometry_msgs/Point.h>
-// #include <std_msgs/String.h>
 #include <Servo.h>
 #include <std_msgs/Int64.h>
-// #include <std_msgs/Int64MultiArray.h>
 #include <math.h>
 #include <AccelStepper.h>
 
 ros::NodeHandle nh;
 
-#define stepPinM1 47
-#define dirPinM1 53
-#define stepPinM2 25
-#define dirPinM2 29
-#define stepPinM3 4
-#define dirPinM3 3
+#define stepPinM1 37
+#define dirPinM1 43
+#define stepPinM2 23
+#define dirPinM2 31
+#define stepPinM3 5
+#define dirPinM3 7
 
-#define stepPinM4 41
+#define stepPinM4 48
 #define dirPinM4 39
 
 // Create an AccelStepper object
@@ -30,38 +27,35 @@ AccelStepper motor4(AccelStepper::DRIVER, stepPinM4, dirPinM4);
 Servo myservo1;
 Servo myservo2;
 
-// Servo suckservo1;
-// Servo suckservo2;
-// Servo suckservo3;
-// Servo suckservo4;
-
 std_msgs::Int64 confirmation_msg;
-std_msgs::Int64 suction_msg;
-// std_msgs::Int64MultiArray random_debug;
-// std_msgs::Int64 random_steps;
+std_msgs::Int64 msg_for_yaw;
+std_msgs::Int64 suck_drop;
 
 int counter_x = 1;
 int counter_y = 1;
 int counter_z = 100;
 int counter_servo = 100;
-// int counter = 68;
 
-// int tray_r = 980/2;
 int tray_r = 0;
 int tray_theta= 200;
-// int tray_z = 1537/2 ;
-int tray_z = 0 ;
+int tray_z = 0 ;    //for debugging
+int final_r = 0;
+int final_theta= 200;
+int final_z = 0 ;    //for debugging
+int yaw_r = -160;
 
 int steps_x;
 int steps_y;
 int steps_z,task;
-
+int yaw_msg = 100;
+int vansh_count = 2;
+ 
 ros::Publisher confirmation ("/info_from_arduino", &confirmation_msg); //publish on completion of task
-ros::Publisher suction ("/task_for_suction", &suction_msg); //publish on completion of task
+ros::Publisher yaw ("/yaw_task", &msg_for_yaw);
+ros::Publisher suction ("/suction_drop", &suck_drop); 
 
-// ros::Publisher randomness ("/okbro", &random_debug);
-// ros::Publisher debugger ("/debugging", &random_steps);
 void angles_callback(const std_msgs::Int64& msg) {
+
 
 int64_t combined_msg = msg.data;
 
@@ -101,9 +95,14 @@ int64_t combined_msg = msg.data;
  task = combined_msg;
 
  if(task == 4){
-    steps_x = tray_r - steps_x
-    steps_y = tray_theta - steps_y
-    steps_z = -(steps_z)
+    steps_x = final_r - steps_x;
+    steps_y = final_theta - steps_y;
+    steps_z = final_z - steps_z;
+ }
+ if(task==3){
+  steps_x = yaw_r - steps_x;
+  steps_y = final_theta - steps_y;
+  steps_z = final_z - steps_z;
  }
 
  if (steps_x > 0) {
@@ -127,139 +126,144 @@ int64_t combined_msg = msg.data;
   motor1.move(steps_x);
   motor2.move(steps_y);
   motor3.move(steps_z);
-    
-  // Implement your motor control logic for steps_x here
+//   //("callback ke end me");    
+}
+
+void yaw_callback(const std_msgs::Int64& msg) {
+yaw_msg = msg.data;
+// //("yaw callback run hua");
 }
 
 ros::Subscriber<std_msgs::Int64> angles("/motor/target_angles", &angles_callback);  //to take info
+ros::Subscriber<std_msgs::Int64> confirmation_from_yaw("/yaw_confirm", &yaw_callback);  //to take info
+//ros::Subscriber<std_msgs::Int64> confirmation_from_yaw("/yaw_confirm", &yaw_callback);  //to take info
+
 
 void setup() {
-    // Initialize your stepper motors and servo here
-    // Set the maximum speed and acceleration
-  motor1.setMaxSpeed(5000.0);
-  motor1.setAcceleration(2500.0);
+
+  motor1.setMaxSpeed(10000.0);
+  motor1.setAcceleration(4000.0);
 
   // Set the initial position to 0
   motor1.setCurrentPosition(0);
 
-  motor2.setMaxSpeed(5000.0);
-  motor2.setAcceleration(2500.0);
+  motor2.setMaxSpeed(65.0);
+  motor2.setAcceleration(30.0);
 
   // Set the initial position to 0
   motor2.setCurrentPosition(0);
 
-  motor3.setMaxSpeed(5000.0);
-  motor3.setAcceleration(2500.0);
+  motor3.setMaxSpeed(6000.0);
+  motor3.setAcceleration(4000.0);
 
   // Set the initial position to 0
   motor3.setCurrentPosition(0);
 
-  motor4.setMaxSpeed(5000.0);
-  motor4.setAcceleration(2500.0);
-
-  // Set the initial position to 0
-  motor4.setCurrentPosition(0);
-
   pinMode(dirPinM1, OUTPUT);
   pinMode(dirPinM2, OUTPUT);
   pinMode(dirPinM3, OUTPUT);
-  
-// //sucktion 1 mechanism 
-//    suckservo1.attach(52);
-//    suckservo1.write(0);
-//     suckservo2.attach(38);
-//    suckservo2.write(0);
 
-//     suckservo3.attach(0);
-//    suckservo3.write(0);
-//     suckservo4.attach(46);
-//    suckservo4.write(0);
-    
 //sucktion 2 mechanim
-    myservo1.attach(7);
-    myservo1.write(135);                 //degree 30 is the downward position as per night of oct23 
+    myservo1.attach(11);
+    myservo1.write(30);                 //degree 110 is the downward position as per night of dec19th    >> 20 to 150 as of jan2 17:37
     nh.initNode();
     nh.subscribe(angles);
-    nh.advertise(suction);
+    nh.subscribe(confirmation_from_yaw);
+    nh.advertise(yaw);
     nh.advertise(confirmation);
-    // nh.advertise(randomness);
-    // nh.advertise(debugger);
+    nh.advertise(suction);
     Serial.begin(57600);
 }
 
+
 void loop() {
-    nh.spinOnce();
-    // delay(100);
-    
-if (task == 1){
-nh.loginfo("task 1");
-  
-if(counter_y==1){
-    nh.loginfo("y chal raha");
+  nh.spinOnce();
+
+if (task == 2){
+//("task2 chala ") ;
+if(counter_y==1919){
   if (motor2.distanceToGo() != 0) {
     motor2.run();
   }
   else {
-nh.loginfo("y completed for task 1");
   counter_y = 0;
-//   delay(500);
+  //("y = 0 ");
   }
 } 
 
-if(counter_x==1) {
-    nh.loginfo("x chal raha");
+if(counter_x==1919) {
   if (motor1.distanceToGo() != 0) {
   motor1.run();
   }
   else{ 
   counter_x=0; 
   counter_servo = 1; 
-  delay(100);
+  //("counter_servo = 1");
   }
 }
 
 if(counter_servo ==1 && counter_y ==0 && counter_x ==0) {
-        //servo back to 0
-        for(int j=135 ; j >=45 ; j--) {
+        for(int j=30 ; j <=150 ; j++) {
         myservo1.write (j);
-        delay(5);
+        delay(2);
         }
     counter_servo = 100;
     counter_z =1;
 }
 
 if(counter_z==1 && counter_x ==0 && counter_y==0) {
-    nh.loginfo("z chal raha");
+    // //("z chal raha");
   if (motor3.distanceToGo() != 0) {
   motor3.run();
   }
   else {
   counter_z=0;
+  delay(100);
   }
 }
-if(counter_z==0 && counter_x ==0) {
-    confirmation_msg.data = 1;
-    confirmation.publish(&confirmation_msg);
-    delay(100) ;   // 2000 to 100
-    counter_z = 4; 
-    delay(1000) ;
-    }
-}
 
-else if (task == 4){    
-nh.loginfo(" task 4 me ghusa");
+if(counter_z==0 && counter_x ==0) {
+  
+  steps_x = -(steps_x);
+  steps_y = -(steps_y);
+  steps_z = 500 - steps_z;
+
+    counter_z = 4;
+    counter_x = 4;
+    counter_y = 4;
+
+   if (steps_x > 0) {
+    digitalWrite(dirPinM1, HIGH); // Set direction forward
+  } else {
+    digitalWrite(dirPinM1, LOW); // Set direction backward
+  }
+  
+  if (steps_y > 0) {
+    digitalWrite(dirPinM2, HIGH); // Set direction forward
+  } else {
+    digitalWrite(dirPinM2, LOW); // Set direction backward
+  }
+
+  if (steps_z > 0) {
+    digitalWrite(dirPinM3, HIGH); // Set direction forward
+  } else {
+    digitalWrite(dirPinM3, LOW); // Set direction backward
+  }
+
+    
+  motor1.move(steps_x);
+  motor2.move(steps_y);
+  motor3.move(steps_z);
+    // delay(1000);
+  }
 
 if(counter_z == 4 ){ 
     if (motor3.distanceToGo() != 0) {
     motor3.run();
-    nh.loginfo("z kam");
+  // //(" z is moving to drop the bottom barcode box now");
   }
   else {
-    counter_z = 5;
-    counter_x = 4;
-    counter_y = 4;
-    digitalWrite(dirPinM3, HIGH);
-    motor3.run(tray_z);
+    counter_z =5;
   }
 }
 
@@ -267,47 +271,52 @@ if(counter_x ==4) {
 
   if (motor1.distanceToGo() != 0) {
   motor1.run();
+  // //(" x is moving to drop the bottom barcode box now");
   }
    else{
-     counter_x=6;
-     delay(100);   // extra delay
+     counter_x=5;
+    //  delay(100);   // extra delay
   }
 }
 
 if (counter_y == 4) {  
   if (motor2.distanceToGo() != 0) {
   motor2.run();
+  // //(" y is moving to drop the bottom barcode box now");
   }
   else{
-  counter_y= 6;
-    delay(500) ;
+  counter_y= 5;
+    // delay(500) ;
   }
 }
 
-if (counter_x == 6 && counter_y ==6 && counter_z == 5) {  
-  if(motor3.distanceToGo() != 0) {
-     motor3.run();
-  }
-  
-  else{ 
-    counter_z = 6;
-    delay(100);
-  }
+if (counter_x ==5 && counter_y ==5 && counter_y ==5) {
+  for(int j=150 ; j >=30 ; j--) {
+        myservo1.write (j);
+        delay(2);
+        }
+  delay(1000);
+  // //(" servo rotated with delay");
+  counter_x=6;
+  counter_y=6;
+  counter_z=6;
 }
+
 
 if(counter_z ==6 && counter_x == 6 && counter_y ==6) {
-    // deactivate suction
-    // nh.loginfo("galat jagah ghus gaya bc4");
-       // add suction publisher
-         suction_msg.data = 1;
-         suction.publish(&suction_msg);
-//        delay(1000);
+
+/////////////suction drop mechanism ////////////////////////////////
+  suck_drop.data = 1503;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
+  suction.publish(&suck_drop);
+  delay(1000);
+  //(" box dropped with delay");
         counter_z =8;
         counter_x =8; 
               //10 is the counter to make every motor back to initial position
-        steps_x = -(tray_r);
-        steps_y = -(tray_theta);
-        steps_z = -(tray_z);
+
+        steps_x = -(final_r);
+        steps_y = -(final_theta);
+        steps_z = -(500);
         if (steps_x > 0) {
             digitalWrite(dirPinM1, HIGH); // Set direction forward
         } else {
@@ -330,17 +339,437 @@ if(counter_z ==6 && counter_x == 6 && counter_y ==6) {
         motor2.move(steps_y);
         motor3.move(steps_z);
 
-        delay(500);  // extra delay
 }
 
 if (counter_z==8 ) {
-    nh.loginfo("z comes back from tray_z ");
+
+    if(motor3.distanceToGo() != 0) {
+     motor3.run();
+     //(" z is comming back to head");
+     }
+     else{
+     counter_z = 9;                    //15 means reached initial head top
+    //  delay(100) ;
+     }
+}
+
+if (counter_x ==8) {
+   if (motor1.distanceToGo() != 0) {                         // x brings to initial position
+  motor1.run();
+  //(" x is comming back to head");
+  }
+  
+  else{
+  counter_x = 9;
+  counter_y =8;
+  }
+}
+
+if (counter_y==8 && counter_x ==9 && counter_z ==9) {
+  if (motor2.distanceToGo() != 0) {
+  motor2.run();
+  //(" y is comming back to head");
+  }
+  else{
+  counter_y = 9;
+//   delay(500) ;
+  }
+}
+
+if (counter_x == 9 && counter_y ==9 && counter_z ==9) {
+    confirmation_msg.data = 1;
+    confirmation.publish(&confirmation_msg);
+    //("  reached head");
+    // delay(100);   // 2000 to 100
+    counter_y = 1;
+    counter_x = 1;
+}
+}
+
+///////////////////////////////////////////////////////////task 2 ends ////////////////////////////////////////////////////////////////////
+
+else if (task == 1){
+
+if(counter_y==1){
+  if (motor2.distanceToGo() != 0) {
+    motor2.run();
+  }
+  else {
+  counter_y = 0;
+  }
+} 
+
+if(counter_x==1) {
+  if (motor1.distanceToGo() != 0) {
+  motor1.run();
+  }
+  else{ 
+  counter_x=0; 
+  counter_servo = 1; 
+  }
+}
+
+if(counter_servo ==1 && counter_y ==0 && counter_x ==0) {
+        for(int j=30 ; j <=150 ; j++) {
+        myservo1.write (j);
+        delay(1);
+        }
+    counter_servo = 100;
+    counter_z =1;
+}
+
+if(counter_z==1 && counter_x ==0 && counter_y==0) {
+    // //("z chal raha");
+  if (motor3.distanceToGo() != 0) {
+  motor3.run();
+  }
+  else {
+  counter_z=0;
+  }
+}
+if(counter_z==0 && counter_x ==0) {
+    confirmation_msg.data = 1;
+    confirmation.publish(&confirmation_msg);
+    // delay(100) ;   // 2000 to 100
+    counter_z = 4; 
+    // delay(1000) ;
+    }
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+else if (task == 3){    
+// //(" task 3 me ghusa");
+
+if(counter_z == 4 ){ 
+    if (motor3.distanceToGo() != 0) {
+    motor3.run();
+    // //("z kam");
+  }
+  else {                                          // MAKE SURE THERE IS NO INSTANCE WHERE TASK_3 RUNS DIRECTLY BEFORE TASK_4
+    counter_z = 15;    
+    counter_x = 14;
+    counter_y = 14;
+    digitalWrite(dirPinM3, HIGH);
+}
+}
+
+if(counter_x ==14) {
+  if (motor1.distanceToGo() != 0) {
+  motor1.run();
+  ////("x to yaw_r");
+  }
+   else{
+     counter_x=99; //99 is random to make other counters in sync with task 4 function
+     msg_for_yaw.data = 69;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
+     yaw.publish(&msg_for_yaw);
+
+     motor1.move(final_r - yaw_r);
+     if (final_r - yaw_r > 0) {
+            digitalWrite(dirPinM1, HIGH); // Set direction forward
+        } 
+        else {
+            digitalWrite(dirPinM1, LOW); // Set direction backward
+        } 
+
+  }
+}
+
+if (counter_y == 14) {  
+  if (motor2.distanceToGo() != 0) {
+  motor2.run();
+  //("y chala");
+  }
+  else{
+  counter_y= 16;     
+    // delay(500) ;
+
+  }
+}
+
+if(yaw_msg == 1) {    //this part is important // no change without vansh
+    motor3.move(final_z);
+    vansh_count = 88;
+    //("vansh_count = 88");
+    yaw_msg = 200;
+  }
+  if(yaw_msg == 77) {
+    motor3.move(500);
+    vansh_count = 89;
+    //("vansh_count = 89");
+    yaw_msg = 200;
+  }
+
+if (counter_y == 16 && counter_z == 15 && vansh_count == 88) {     //yaw_msg = 1 should be sent when you find barcode
+  if(motor3.distanceToGo() != 0) {
+     motor3.run();
+  //("z chala after not bottom");   
+  }
+  
+  else{ 
+                           //99 is random to make other counters in sync with task 4 function
+  delay(100);
+  //("locha hogya");
+  for(int j=150 ; j >=30 ; j--) {
+  myservo1.write (j);
+  delay(1);
+  }
+  delay(100);
+  counter_z = 16;  
+  }
+}
+
+if (counter_x == 99  && vansh_count == 88) {  //yaw_msg = 1 should be sent when you find barcode   
+  if(motor1.distanceToGo() != 0) {     
+     motor1.run();
+     //("x chala after fb not bottom");
+  }
+  
+  else{  
+    counter_x = 16;
+    // delay(100);
+     //("x me locha hogya not bottom");
+  }
+}
+
+if (counter_y == 16 && counter_z == 15 && vansh_count == 89) {     //yaw_msg = 1 should be sent when you find barcode
+  if(motor3.distanceToGo() != 0) {
+     motor3.run();
+     //nh.loginfo("z chala after bottom ");
+  }
+  
+  else{                            //99 is random to make other counters in sync with task 4 function
+  delay(100);
+  //("locha hogya");
+  for(int j=150 ; j >=30 ; j--) {
+  myservo1.write (j);
+  delay(1);
+  }
+  delay(1000);
+  counter_z = 16;  
+  }
+}
+
+if (counter_x == 99 && vansh_count == 89) {  //yaw_msg = 1 should be sent when you find barcode
+     //ASK VANSH 
+  if(motor1.distanceToGo() != 0) {     
+     motor1.run();
+     //("x chala after bottom ");
+  }
+  
+  else{  
+    counter_x = 16;
+    //("x me locha hogya");
+  }
+}
+
+if (vansh_count == 89 && counter_z == 16 && counter_y == 16 && counter_x == 16) {
+  suck_drop.data = 1503;   
+  suction.publish(&suck_drop);
+  delay(1000);
+
+  counter_z = 1818;
+        motor3.move(-500);
+  
+}
+
+if(counter_z == 1818) {
+    if(motor3.distanceToGo() != 0) {
+     motor3.run();
+     //("z is reaching again detecting plaace after dropping ");
+     }
+     else{
+     counter_z = 1919;
+     counter_y = 1919;
+     counter_x = 1919;
+     confirmation_msg.data = 5;       // 5 is for box is droped at bottom_barcode_tray and then z is brought to zero
+     confirmation.publish(&confirmation_msg);   
+     //("5 is published means now task2 should come");                
+    //  delay(100) ;
+     }
+}
+
+
+if(counter_z == 16 && counter_x == 16 && counter_y == 16 && vansh_count == 88) {
+
+
+// delay(1000);
+  suck_drop.data = 1503;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
+  suction.publish(&suck_drop);
+  delay(100);
+   ////////suction drop mechanism /////// 
+        counter_z = 18;
+        counter_x = 18;              
+        steps_x = -(final_r);
+        steps_y = -(final_theta);
+        steps_z = -(final_z);
+      
+        if (steps_x > 0) {
+            digitalWrite(dirPinM1, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM1, LOW); // Set direction backward
+        }
+        
+        if (steps_y > 0) {
+            digitalWrite(dirPinM2, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM2, LOW); // Set direction backward
+        }
+
+        if (steps_z > 0) {
+            digitalWrite(dirPinM3, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM3, LOW); // Set direction backward
+        }
+
+        motor1.move(steps_x);
+        motor2.move(steps_y);
+        motor3.move(steps_z);
+
+        // delay(500);  // extra delay
+}
+
+
+if (counter_z==18 ) {
+    //("z comes back from tray_z ");
+    if(motor3.distanceToGo() != 0) {
+     motor3.run();
+     }
+     else{
+     counter_z = 19;                    //15 means reached initial head top
+    //  delay(100) ;
+     }
+}
+
+if (counter_x ==18) {
+  //("x comes back from tray_z ");
+   if (motor1.distanceToGo() != 0) {                         // x brings to initial position
+  motor1.run();
+  }
+  
+  else{
+  msg_for_yaw.data = 10;
+  yaw.publish(&msg_for_yaw); 
+  counter_x = 19;
+  counter_y =18;
+    //   delay(100) ;  
+  }
+  }
+
+
+if (counter_y==18 && counter_x ==19 && counter_z ==19) {
+  //("y comes back from tray_z ");
+  if (motor2.distanceToGo() != 0) {
+  motor2.run();
+  }
+  else{
+  counter_y = 19;
+//   delay(500) ;
+  }
+}
+
+if (counter_x == 19 && counter_y ==19 && counter_z ==19) {
+    confirmation_msg.data = 1;
+    confirmation.publish(&confirmation_msg);
+    // delay(100);   // 2000 to 100
+    counter_y = 1;
+    counter_x = 1;
+}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+else if (task == 4){    
+//(" task 4 me ghusa");
+
+if(counter_z == 4 ){ 
+    if (motor3.distanceToGo() != 0) {
+    motor3.run();
+    //("z kam");
+  }
+  else {
+    counter_z = 5;
+    counter_x = 4;
+    counter_y = 4;
+    digitalWrite(dirPinM3, HIGH);
+    motor3.move(final_z);
+  }
+}
+
+if(counter_x ==4) {
+
+  if (motor1.distanceToGo() != 0) {
+  motor1.run();
+  }
+   else{
+     counter_x=6;
+    //  delay(100);   // extra delay
+  }
+}
+
+if (counter_y == 4) {  
+  if (motor2.distanceToGo() != 0) {
+  motor2.run();
+  }
+  else{
+  counter_y= 6;
+    // delay(500) ;
+  }
+}
+
+if (counter_x == 6 && counter_y ==6 && counter_z == 5) {  
+  if(motor3.distanceToGo() != 0) {
+     motor3.run();
+  }
+  
+  else{ 
+    counter_z = 6;
+    // delay(100);
+  }
+}
+
+if(counter_z ==6 && counter_x == 6 && counter_y ==6) {
+
+/////////////suction drop mechanism ////////////////////////////////
+  suck_drop.data = 1503;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
+  suction.publish(&suck_drop);
+  delay(2000);
+        counter_z =8;
+        counter_x =8; 
+              //10 is the counter to make every motor back to initial position
+        steps_x = -(final_r);
+        steps_y = -(final_theta);
+        steps_z = -(final_z);
+        if (steps_x > 0) {
+            digitalWrite(dirPinM1, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM1, LOW); // Set direction backward
+        }
+        
+        if (steps_y > 0) {
+            digitalWrite(dirPinM2, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM2, LOW); // Set direction backward
+        }
+
+        if (steps_z > 0) {
+            digitalWrite(dirPinM3, HIGH); // Set direction forward
+        } else {
+            digitalWrite(dirPinM3, LOW); // Set direction backward
+        }
+
+        motor1.move(steps_x);
+        motor2.move(steps_y);
+        motor3.move(steps_z);
+
+        // delay(500);  // extra delay
+}
+
+if (counter_z==8 ) {
+    //("z comes back from tray_z ");
     if(motor3.distanceToGo() != 0) {
      motor3.run();
      }
      else{
      counter_z = 9;                    //15 means reached initial head top
-     delay(100) ;
+    //  delay(100) ;
      }
 }
 
@@ -353,8 +782,8 @@ if (counter_x ==8) {
   counter_x = 9;
   counter_y =8;
   // servo back to 90 degree
-      delay(100) ; 
-  for(int j=45 ; j <=135 ; j++) {
+    //   delay(100) ; 
+  for(int j=150 ; j >=30 ; j--) {
   myservo1.write (j);
   delay(2);
   }
@@ -367,18 +796,20 @@ if (counter_y==8 && counter_x ==9 && counter_z ==9) {
   }
   else{
   counter_y = 9;
-  delay(500) ;
+//   delay(500) ;
   }
 }
 
 if (counter_x == 9 && counter_y ==9 && counter_z ==9) {
     confirmation_msg.data = 1;
     confirmation.publish(&confirmation_msg);
-    delay(100);   // 2000 to 100
+    // delay(100);   // 2000 to 100
     counter_y = 1;
     counter_x = 1;
 }
 }
 confirmation_msg.data = 0;
 confirmation.publish(&confirmation_msg);
+// msg_for_yaw.data = 16;
+// yaw.publish(&msg_for_yaw);   // Call Sumit if wo continous publishing wala issue aata hai. DONT uncomment without calling WARNA FUCK HOJAYEGA
 }  

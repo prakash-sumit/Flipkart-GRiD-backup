@@ -16,6 +16,7 @@ class MotorControlNode:
         self.motor_target_sub = rospy.Subscriber('/motor/target_coordinates', Point, self.motor_target_callback, queue_size=5)
         self.suck_drop = rospy.Subscriber('/suction_drop', Int64, self.suck_drop_callback, queue_size=5)
         self.yaw_pub = rospy.Publisher('/yaw_confirm', Int64, queue_size=5)
+        rospy.Subscriber('/bottom_barcode_confirm', Int64, self.bottom_callback, queue_size=1)
         
         self.steps_x = None
         self.steps_y = None
@@ -30,8 +31,16 @@ class MotorControlNode:
 
         else:
             pass
-            
-        
+    
+    def bottom_callback(self, data):
+        self.bottom_value = data.data
+        if (self.bottom_value == 7):
+            self.yaw_pub.publish(77)     #publish 77 to yaw_confirm >> means bottom barcode case
+
+        else:
+            pass
+             
+    
     def task_callback(self, data):
         self.task = data.data
         print("new task came from dm")
@@ -196,6 +205,53 @@ class MotorControlNode:
                 self.motor_angles_pub.publish(angles_to_pub)
             else:
                 print('No position from cv')
+        
+        elif (self.task == 2):
+            while (self.steps_x == None):
+                # print('No position from cv')
+                pass
+                
+            # angles = [None]*4
+            # angles[0] = self.task
+            # angles[1] = int(self.steps_x)
+            # angles[2] = int(self.steps_y)
+            # angles[3] = int(self.steps_z)
+            
+            # angles_to_pub = Int64MultiArray()
+            # angles_to_pub.data = angles
+            
+            # packed_data = (int(self.steps_z) << 27) | (int(self.steps_y) << 15) | (int(self.steps_x) << 3) | self.task
+            
+            x,y,z = '','',''
+            t = str(self.task)
+            if(self.steps_x < 0):
+                m = str(abs(self.steps_x))
+                x = '1'+'0'*(4-len(m))+m
+            else:
+                m = str(abs(self.steps_x))
+                x = '0'+'0'*(4-len(m))+m
+            if(self.steps_y < 0):
+                m = str(abs(self.steps_y))
+                y = '1'+'0'*(4-len(m))+m
+            else:
+                m = str(abs(self.steps_y))
+                y = '0'+'0'*(4-len(m))+m
+            if(self.steps_z < 0):
+                m = str(abs(self.steps_z))
+                z = '1'+'0'*(4-len(m))+m
+            else:
+                m = str(abs(self.steps_z))
+                z = '0'+'0'*(4-len(m))+m
+            encoded_string = t+x+y+z
+            # print(encoded_string, len(encoded_string))
+            encoded_number = int(encoded_string)
+            
+            angles_to_pub = Int64()
+            angles_to_pub.data = encoded_number
+            # angles_to_pub.data = self.task
+            print('hello')
+            
+            self.motor_angles_pub.publish(angles_to_pub)
                                 
     def info_callback(self, data):
         self.confirmation = data.data
@@ -211,6 +267,20 @@ class MotorControlNode:
             self.pub_to_dm.publish(0)
             self.confirmation = 0
         elif (self.task == 3 and self.confirmation == 1):
+            self.steps_x = None
+            self.steps_y = None
+            self.steps_z = None
+                
+            self.pub_to_dm.publish(0)
+            self.confirmation = 0
+        elif (self.confirmation == 5):
+            self.steps_x = None
+            self.steps_y = None
+            self.steps_z = None
+
+            self.pub_to_dm.publish(2)
+            self.confirmation = 0
+        elif self.task == 2 and self.confirmation == 1:
             self.steps_x = None
             self.steps_y = None
             self.steps_z = None

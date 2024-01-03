@@ -71,6 +71,7 @@ class Barcode_Detection:
     def __init__(self):
         rospy.Subscriber('/barcode_area', Float64, self.Callback, queue_size=1)
         rospy.Subscriber('/yaw_task', Int64, self.task_Callback, queue_size=5)
+        
         self.pub = rospy.Publisher('/yaw_confirm', Int64, queue_size=5)
         # self.yaw_arduino_pub = rospy.Publisher('/yaw_arduino_task', Int64, queue_size=5)
         self.task = None
@@ -88,8 +89,7 @@ class Barcode_Detection:
             yaw_arduino_task = Int64()
             yaw_arduino_task.data = 10
             self.pub.publish(yaw_arduino_task)
-
-
+        
     def Callback(self, area):
         # global previous_area
 
@@ -102,8 +102,8 @@ class Barcode_Detection:
                 print(self.current_area - self.max_area)
 
             else:
-                self.task_to_controls.data = 1  # stop and send controls barcode is found
-                self.pub.publish(self.task_to_controls)
+                # self.task_to_controls.data = 1  # stop and send controls barcode is found
+                # self.pub.publish(self.task_to_controls)
                 self.task = None
             
             if(self.current_area > self.max_area):
