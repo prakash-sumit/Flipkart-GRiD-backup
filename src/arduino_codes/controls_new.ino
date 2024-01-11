@@ -38,7 +38,7 @@ int counter_z = 100;
 int counter_servo = 100;
 
 int tray_r = 0;
-int tray_theta= 155;
+int tray_theta= 230;
 int tray_z = 0 ;    //for debugging
 int yaw_r = -160;
 
@@ -52,7 +52,7 @@ ros::Publisher yaw ("/yaw_task", &msg_for_yaw);
 ros::Publisher suction ("/suction_drop", &suck_drop); 
 
 void angles_callback(const std_msgs::Int64& msg) {
-nh.loginfo("task aaya");
+// nh.loginfo("task aaya");
 
 int64_t combined_msg = msg.data;
 
@@ -123,12 +123,15 @@ int64_t combined_msg = msg.data;
   motor1.move(steps_x);
   motor2.move(steps_y);
   motor3.move(steps_z);
-  nh.loginfo("callback ke end me");    
+  // nh.loginfo("callback ke end me");    
 }
 
 void yaw_callback(const std_msgs::Int64& msg) {
 yaw_msg = msg.data;
-nh.loginfo("yaw callback run hua");
+if(yaw_msg == 77){
+  yaw_msg = 1;
+}
+// nh.loginfo("yaw callback run hua");
 }
 
 ros::Subscriber<std_msgs::Int64> angles("/motor/target_angles", &angles_callback);  //to take info
@@ -136,8 +139,8 @@ ros::Subscriber<std_msgs::Int64> confirmation_from_yaw("/yaw_confirm", &yaw_call
 
 void setup() {
 
-  motor1.setMaxSpeed(2800.0);
-  motor1.setAcceleration(2000.0);
+  motor1.setMaxSpeed(10000.0);
+  motor1.setAcceleration(7000.0);
 
   // Set the initial position to 0
   motor1.setCurrentPosition(0);
@@ -148,8 +151,8 @@ void setup() {
   // Set the initial position to 0
   motor2.setCurrentPosition(0);
 
-  motor3.setMaxSpeed(4000.0);
-  motor3.setAcceleration(3000.0);
+  motor3.setMaxSpeed(6000.0);
+  motor3.setAcceleration(4000.0);
 
   // Set the initial position to 0
   motor3.setCurrentPosition(0);
@@ -166,7 +169,7 @@ void setup() {
     
 //sucktion 2 mechanim
     myservo1.attach(11);
-    myservo1.write(0);                 //degree 110 is the downward position as per night of dec19th 
+    myservo1.write(30);                 //degree 110 is the downward position as per night of dec19th 
     nh.initNode();
     nh.subscribe(angles);
     nh.subscribe(confirmation_from_yaw);
@@ -183,45 +186,45 @@ void loop() {
 
 
 if (task == 1){
-  nh.loginfo("task 1");
+  // nh.loginfo("task 1");
   digitalWrite(10, LOW);
   
 if(counter_y==1){
-    nh.loginfo("y chal raha");
+    // nh.loginfo("y chal raha");
   if (motor2.distanceToGo() != 0) {
     motor2.run();
   }
   else {
-nh.loginfo("y completed for task 1");
+// nh.loginfo("y completed for task 1");
   counter_y = 0;
 //   delay(500);
   }
 } 
 
 if(counter_x==1) {
-    nh.loginfo("x chal raha");
+    // nh.loginfo("x chal raha");
   if (motor1.distanceToGo() != 0) {
   motor1.run();
   }
   else{ 
   counter_x=0; 
   counter_servo = 1; 
-  delay(100);
+  // delay(10);
   }
 }
 
 if(counter_servo ==1 && counter_y ==0 && counter_x ==0) {
         //servo back to 0
-        for(int j=0 ; j <=110 ; j++) {
+        for(int j=30 ; j <=150 ; j++) {
         myservo1.write (j);
-        delay(5);
+        delay(1);
         }
     counter_servo = 100;
     counter_z =1;
 }
 
 if(counter_z==1 && counter_x ==0 && counter_y==0) {
-    nh.loginfo("z chal raha");
+    // nh.loginfo("z chal raha");
   if (motor3.distanceToGo() != 0) {
   motor3.run();
   }
@@ -232,9 +235,9 @@ if(counter_z==1 && counter_x ==0 && counter_y==0) {
 if(counter_z==0 && counter_x ==0) {
     confirmation_msg.data = 1;
     confirmation.publish(&confirmation_msg);
-    delay(100) ;   // 2000 to 100
+    // delay(100) ;   // 2000 to 100
     counter_z = 4; 
-    delay(1000) ;
+    // delay(1000) ;
     }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +247,7 @@ else if (task == 3){
 if(counter_z == 4 ){ 
     if (motor3.distanceToGo() != 0) {
     motor3.run();
-    nh.loginfo("z kam");
+    // nh.loginfo("z kam");
   }
   else {                                          // MAKE SURE THERE IS NO INSTANCE WHERE TASK_3 RUNS DIRECTLY BEFORE TASK_4
     counter_z = 15;    
@@ -258,13 +261,13 @@ if(counter_z == 4 ){
 if(counter_x ==14) {
   if (motor1.distanceToGo() != 0) {
   motor1.run();
-  nh.loginfo("x to yaw_r");
+  // nh.loginfo("x to yaw_r");
   }
    else{
      counter_x=99; //99 is random to make other counters in sync with task 4 function
      msg_for_yaw.data = 69;   // 69 STARTS THE OTHER AURDINO AND ALSO THE BARCODE_YAW CODE
      yaw.publish(&msg_for_yaw);
-     nh.loginfo("69 starts the sj_cam");
+    //  nh.loginfo("69 starts the sj_cam");
 
      motor1.move(tray_r - yaw_r);
      if (tray_r - yaw_r > 0) {
@@ -274,36 +277,36 @@ if(counter_x ==14) {
             digitalWrite(dirPinM1, LOW); // Set direction backward
         } 
 
-     delay(100);   // extra delay
+    //  delay(1);   // extra delay
   }
 }
 
 if (counter_y == 14) {  
   if (motor2.distanceToGo() != 0) {
   motor2.run();
-  nh.loginfo("y chala");
+  // nh.loginfo("y chala");
   }
   else{
   counter_y= 16;     
-    delay(500) ;
+    // delay(10) ;
   }
 }
 
 if (counter_y == 16 && counter_z == 15 && yaw_msg == 1) {     //yaw_msg = 1 should be sent when you find barcode
   if(motor3.distanceToGo() != 0) {
      motor3.run();
-     nh.loginfo("z chala after find_barcode");
+    //  nh.loginfo("z chala after find_barcode");
   }
   
   else{ 
                            //99 is random to make other counters in sync with task 4 function
-  delay(100);
-  nh.loginfo("locha hogya");
-  for(int j=110 ; j >=0 ; j--) {
+  // delay(50);
+  // nh.loginfo("locha hogya");
+  for(int j=150 ; j >=30 ; j--) {
   myservo1.write (j);
-  delay(2);}
+  delay(1);}
   
-  delay(100);
+  delay(1500);
   counter_z = 16;  
   }
 }
@@ -312,13 +315,13 @@ if (counter_x == 99  && yaw_msg == 1) {  //yaw_msg = 1 should be sent when you f
      //ASK SUMIT      
   if(motor1.distanceToGo() != 0) {     
      motor1.run();
-     nh.loginfo("x chala after fb");
+    //  nh.loginfo("x chala after fb");
   }
   
   else{  
     counter_x = 16;
-    delay(100);
-     nh.loginfo("x me locha hogya");
+    // delay(1);
+    //  nh.loginfo("x me locha hogya");
   }
 }
 
@@ -358,22 +361,22 @@ if(counter_z == 16 && counter_x == 16 && counter_y == 16) {
         motor2.move(steps_y);
         motor3.move(steps_z);
 
-        delay(500);  // extra delay
+        // delay(100);  // extra delay
 }
 
 if (counter_z==18 ) {
-    nh.loginfo("z comes back from tray_z ");
+    // nh.loginfo("z comes back from tray_z ");
     if(motor3.distanceToGo() != 0) {
      motor3.run();
      }
      else{
      counter_z = 19;                    //15 means reached initial head top
-     delay(100) ;
+    //  delay(10) ;
      }
 }
 
 if (counter_x ==18) {
-  nh.loginfo("x comes back from tray_z ");
+  // nh.loginfo("x comes back from tray_z ");
    if (motor1.distanceToGo() != 0) {                         // x brings to initial position
   motor1.run();
   }
@@ -381,41 +384,41 @@ if (counter_x ==18) {
   else{
   msg_for_yaw.data = 10;
   yaw.publish(&msg_for_yaw); 
-  nh.loginfo("yaw ko 10 publish hua")
+  // nh.loginfo("yaw ko 10 publish hua");
   counter_x = 19;
   counter_y =18;
-      delay(100) ;  
+      // delay(100) ;  
   }
   }
 
 
 if (counter_y==18 && counter_x ==19 && counter_z ==19) {
-  nh.loginfo("y comes back from tray_z ");
+  // nh.loginfo("y comes back from tray_z ");
   if (motor2.distanceToGo() != 0) {
   motor2.run();
   }
   else{
   counter_y = 19;
-  delay(500) ;
+  // delay(50) ;
   }
 }
 
 if (counter_x == 19 && counter_y ==19 && counter_z ==19) {
     confirmation_msg.data = 1;
     confirmation.publish(&confirmation_msg);
-    delay(100);   // 2000 to 100
+    // delay(100);   // 2000 to 100
     counter_y = 1;
     counter_x = 1;
 }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 else if (task == 4){    
-nh.loginfo(" task 4 me ghusa");
+// nh.loginfo(" task 4 me ghusa");
 
 if(counter_z == 4 ){ 
     if (motor3.distanceToGo() != 0) {
     motor3.run();
-    nh.loginfo("z kam");
+    // nh.loginfo("z kam");
   }
   else {
     counter_z = 5;
@@ -433,7 +436,7 @@ if(counter_x ==4) {
   }
    else{
      counter_x=6;
-     delay(100);   // extra delay
+    //  delay(1);   // extra delay
   }
 }
 
@@ -443,7 +446,7 @@ if (counter_y == 4) {
   }
   else{
   counter_y= 6;
-    delay(500) ;
+    // delay(1) ;
   }
 }
 
@@ -454,7 +457,7 @@ if (counter_x == 6 && counter_y ==6 && counter_z == 5) {
   
   else{ 
     counter_z = 6;
-    delay(100);
+    // delay(1);
   }
 }
 
@@ -492,17 +495,17 @@ if(counter_z ==6 && counter_x == 6 && counter_y ==6) {
         motor2.move(steps_y);
         motor3.move(steps_z);
 
-        delay(500);  // extra delay
+        // delay(5);  // extra delay
 }
 
 if (counter_z==8 ) {
-    nh.loginfo("z comes back from tray_z ");
+    // nh.loginfo("z comes back from tray_z ");
     if(motor3.distanceToGo() != 0) {
      motor3.run();
      }
      else{
      counter_z = 9;                    //15 means reached initial head top
-     delay(100) ;
+    //  delay(1) ;
      }
 }
 
@@ -515,10 +518,10 @@ if (counter_x ==8) {
   counter_x = 9;
   counter_y =8;
   // servo back to 90 degree
-      delay(100) ; 
-  for(int j=105 ; j >=0 ; j--) {
+      // delay(100) ; 
+  for(int j=150 ; j >=30 ; j--) {
   myservo1.write (j);
-  delay(2);
+  delay(1);
   }
   }
 }
@@ -529,14 +532,14 @@ if (counter_y==8 && counter_x ==9 && counter_z ==9) {
   }
   else{
   counter_y = 9;
-  delay(500) ;
+  // delay(50) ;
   }
 }
 
 if (counter_x == 9 && counter_y ==9 && counter_z ==9) {
     confirmation_msg.data = 1;
     confirmation.publish(&confirmation_msg);
-    delay(100);   // 2000 to 100
+    // delay(100);   // 2000 to 100
     counter_y = 1;
     counter_x = 1;
 }

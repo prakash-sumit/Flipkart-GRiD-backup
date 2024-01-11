@@ -16,9 +16,10 @@ import torch
 class Box_Detection:
 
     def __init__(self):
-        self.model = torch.hub.load('/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5', 'custom', source = 'local', path = '/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5/runs/train/exp14/weights/best.pt', force_reload=True)
-        self.model2 = torch.hub.load('/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5', 'custom', source = 'local', path = '/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5/runs/train/exp/weights/best.pt', force_reload=True)
+        self.model = torch.hub.load('/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5', 'custom', source = 'local', path = '/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5/box_new/best.pt', force_reload=True)
+        self.model2 = torch.hub.load('/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5', 'custom', source = 'local', path = '/home/sedrica/Flipkart-GRiD-backup/src/perception/scripts/yolov5/best.pt', force_reload=True)
         # Arm_cam_topic = "/zed2i/zed_node/left_raw/image_rect_color"
+        # self.model2 = self.model
         Arm_cam_topic = "zed_camera/image"
         rospy.Subscriber('/task', Int64, self.task_Callback)
         rospy.Subscriber(Arm_cam_topic, Image, self.Callback)
@@ -126,6 +127,9 @@ class Box_Detection:
                     print(i)
             print(self.depth_image[midpoints[i][1] + _y1, midpoints[i][0] + _x1])
             
+            # if math.isinf(self.depth_image[midpoints[i][1] + _y1, midpoints[i][0] + _x1]):
+            #     return
+            
             _label = Int64()
             _, _, _, _, _, label = filtered_boxes[index].tolist()
             _label.data = int(label)
@@ -145,13 +149,27 @@ class Box_Detection:
             x1, y1, x2, y2, _, _ = filtered_boxes[index].tolist()
             #print(np.array(image).shape)
             cropped_image = image[int(y1*h):int(y2*h+1), int(x1*w):int(x2*w+1)]  # multiplying for conversion to pixel coordinates
-            # cv2.circle(cropped_image, (closest_point[0], closest_point[1]), 10, (255,0,0), thickness=2, lineType=8, shift=0)
-            # circle_radius = 10
-            # circle_color = (0, 0, 255)  # Red color in BGR format
-            # circle_thickness = 2
+            # cropped_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # mask = np.zeros(cropped_image.shape[:2], dtype=np.uint8)
+            # mask = np.zeros(cropped_image.shape[:2], dtype="uint8")
+            # mask = cv2.rectangle(mask,(int(x1*w),int(y1*h)), (int(x2*w),int(y2*h+1)),(255,255,255),-1)
+            # mask[int(y1*h):int(y2*h+1), int(x1*w):int(x2*w+1)] = 255
 
-            # for point in midpoints:
-            #     cv2.circle(image, point, circle_radius, circle_color, circle_thickness)
+            # Draw a white rectangle on the mask
+            # cv2.rectangle(mask, (x1, y1), (x2, y2), (255, 255, 255), -1)
+
+            # Invert the mask to keep the inside of the rectangle
+            # mask_inv = cv2.bitwise_not(mask)
+
+            # Use the inverted mask to black out the area outside the rectangle
+            # result = cv2.bitwise_and(cropped_image, cropped_image, mask=mask)
+            # cv2.circle(cropped_image, (closest_point[0], closest_point[1]), 10, (255,0,0), thickness=2, lineType=8, shift=0)
+            circle_radius = 10
+            circle_color = (0, 0, 255)  # Red color in BGR format
+            circle_thickness = 2
+
+            for point in midpoints:
+                cv2.circle(image, point, circle_radius, circle_color, circle_thickness)
             image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
             cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB)
             image2 = bridge.cv2_to_imgmsg(image2, "passthrough")
@@ -216,7 +234,10 @@ class Box_Detection:
             try:
                 image = bridge.imgmsg_to_cv2(self.tray_image, "passthrough")
                 start_time = time.time()
+                cropped_image = image
+                image = image[134:720, 150:1100]
                 h, w, _ = image.shape
+                print(image.shape)
 
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 # cv2.imshow('d',image)
@@ -243,7 +264,7 @@ class Box_Detection:
                 x1, y1, x2, y2, _ = main_box
                 # print(x1)
 
-                cropped_image = image[int(y1*h+ 20):int(y2*h-20), int(x1*w+40):int(x2*w-40)]  # multiplying for conversion to pixel coordinates
+                cropped_image = image[int(y1*h):int(y2*h), int(x1*w):int(x2*w)]  # multiplying for conversion to pixel coordinates
 
                 image_pub = bridge.cv2_to_imgmsg(cropped_image, "passthrough")
 

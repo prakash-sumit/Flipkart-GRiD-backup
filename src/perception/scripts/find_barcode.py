@@ -102,8 +102,8 @@ class Barcode_Detection:
                 print(self.current_area - self.max_area)
 
             else:
-                # self.task_to_controls.data = 1  # stop and send controls barcode is found
-                # self.pub.publish(self.task_to_controls)
+                self.task_to_controls.data = 1  # stop and send controls barcode is found
+                self.pub.publish(self.task_to_controls)
                 self.task = None
             
             if(self.current_area > self.max_area):

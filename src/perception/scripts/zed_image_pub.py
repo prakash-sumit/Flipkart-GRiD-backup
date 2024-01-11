@@ -74,7 +74,7 @@ class Zed:
     def fit_plane_model(self, point_cloud_subset):
         # Use principal component analysis (PCA) to fit a plane
         pca = PCA(n_components=3)
-        pca.fit(point_cloud_subset.reshape(point_cloud_subset.shape[0]*point_cloud_subset.shape[1]))
+        pca.fit(point_cloud_subset.reshape(point_cloud_subset.shape[0]*point_cloud_subset.shape[1], point_cloud_subset.shape[2]))
         
         # Extract the normal vector from the first principal component
         normal_vector = pca.components_[0]

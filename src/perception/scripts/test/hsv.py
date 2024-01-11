@@ -25,7 +25,7 @@ hMin = sMin = vMin = hMax = sMax = vMax = 0
 phMin = psMin = pvMin = phMax = psMax = pvMax = 0
 
 # Open a connection to the webcam (0 represents the default camera)
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(0)
 
 wait_time = 33
 

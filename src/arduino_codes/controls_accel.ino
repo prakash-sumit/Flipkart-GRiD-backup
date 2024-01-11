@@ -1,9 +1,7 @@
 #include <AccelStepper.h>
-
 // Define the pins for the stepper motor
-#define STEP_PIN 2
-#define DIR_PIN 4
-
+#define STEP_PIN 23
+#define DIR_PIN 31
 // Create an AccelStepper object
 AccelStepper stepper(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
 
@@ -17,13 +15,11 @@ void setup() {
 
   // Set the direction pin as OUTPUT
   pinMode(DIR_PIN, OUTPUT);
-  digitalWrite(DIR_PIN, HIGH);
+  digitalWrite(DIR_PIN, LOW);
 
-  stepper.move(1000);
-
+  stepper.move(-400);
   // moveStepper(-200);
 }
-
 void loop() {
   if (stepper.distanceToGo() != 0) {
     stepper.run();
